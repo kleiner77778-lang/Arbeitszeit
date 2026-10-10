@@ -67,7 +67,7 @@ class MatrixRain(FloatLayout):
         self.clear_widgets()
         self.cols = []
         col_width = 30
-        num_cols = int(self.width / col_width) if self.width > 0 else 20
+        num_cols = int(self.width / col_width) if self.width > 0 else 30
         
         for i in range(num_cols):
             lbl = Label(
@@ -121,15 +121,15 @@ class LkwTrackerApp(App):
         matrix_bg = MatrixRain()
         root.add_widget(matrix_bg)
 
-        # 2. Hauptlayout (Dynamisch anpassbar an Drehung)
+        # 2. Hauptlayout im Querformat (Vertikal aufgeteilt: Oben Info, Mitte Freiraum, Unten waagerechte Button-Leiste)
         main_layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
 
         # OBERER BEREICH: Titel & Status
-        top_area = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=0.4)
+        top_area = BoxLayout(orientation='horizontal', spacing=20, size_hint_y=0.35)
         
         top_area.add_widget(Label(
             text="LKW TRACKER",
-            font_size='18sp',
+            font_size='20sp',
             bold=True,
             color=(0.1, 1.0, 0.4, 1),
             halign='left',
@@ -137,8 +137,8 @@ class LkwTrackerApp(App):
         ))
 
         self.status_label = Label(
-            text="Status: Keine Schicht",
-            font_size='15sp',
+            text="Status: Keine aktive Schicht",
+            font_size='16sp',
             color=(0.8, 1.0, 0.8, 1),
             halign='right',
             valign='middle'
@@ -148,29 +148,29 @@ class LkwTrackerApp(App):
         
         main_layout.add_widget(top_area)
 
-        # Freiraum in der Mitte, damit das Matrix-Fenster frei bleibt
-        main_layout.add_widget(Widget(size_hint_y=0.2))
+        # Mittlerer Freiraum für den Matrix-Regen
+        main_layout.add_widget(Widget(size_hint_y=0.15))
 
-        # UNTERER BEREICH: Waagerechte Button-Leiste
-        btn_layout = BoxLayout(orientation='horizontal', spacing=8, size_hint_y=None, height='50dp')
+        # UNTERER BEREICH: Waagerechte Button-Leiste quer über den Bildschirm
+        btn_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=None, height='50dp')
 
-        btn_start = Button(text="START", font_size='13sp', bold=True, background_color=(0.0, 0.7, 0.2, 1), color=(1, 1, 1, 1))
+        btn_start = Button(text="START", font_size='14sp', bold=True, background_color=(0.0, 0.7, 0.2, 1), color=(1, 1, 1, 1))
         btn_start.bind(on_release=lambda x: self.schicht_starten())
         btn_layout.add_widget(btn_start)
 
-        btn_ankunft = Button(text="ANKUNFT", font_size='13sp', bold=True, background_color=(0.0, 0.4, 0.9, 1), color=(1, 1, 1, 1))
+        btn_ankunft = Button(text="ANKUNFT", font_size='14sp', bold=True, background_color=(0.0, 0.4, 0.9, 1), color=(1, 1, 1, 1))
         btn_ankunft.bind(on_release=lambda x: self.stopp_erfassen("Ankunft"))
         btn_layout.add_widget(btn_ankunft)
 
-        btn_weiterfahrt = Button(text="WEITER", font_size='13sp', bold=True, background_color=(0.9, 0.5, 0.0, 1), color=(1, 1, 1, 1))
+        btn_weiterfahrt = Button(text="WEITER", font_size='14sp', bold=True, background_color=(0.9, 0.5, 0.0, 1), color=(1, 1, 1, 1))
         btn_weiterfahrt.bind(on_release=lambda x: self.stopp_erfassen("Weiterfahrt"))
         btn_layout.add_widget(btn_weiterfahrt)
 
-        btn_feierabend = Button(text="FEIERABEND", font_size='13sp', bold=True, background_color=(0.9, 0.1, 0.2, 1), color=(1, 1, 1, 1))
+        btn_feierabend = Button(text="FEIERABEND", font_size='14sp', bold=True, background_color=(0.9, 0.1, 0.2, 1), color=(1, 1, 1, 1))
         btn_feierabend.bind(on_release=lambda x: self.feierabend_dialog_oeffnen())
         btn_layout.add_widget(btn_feierabend)
 
-        btn_berichte = Button(text="BERICHTE", font_size='13sp', bold=True, background_color=(0.3, 0.3, 0.5, 1), color=(1, 1, 1, 1))
+        btn_berichte = Button(text="BERICHTE", font_size='14sp', bold=True, background_color=(0.3, 0.3, 0.5, 1), color=(1, 1, 1, 1))
         btn_berichte.bind(on_release=lambda x: self.schichtberichte_anzeigen())
         btn_layout.add_widget(btn_berichte)
 
@@ -222,11 +222,11 @@ class LkwTrackerApp(App):
         conn.commit()
         conn.close()
 
-        self.status_label.text = f"Aktiv seit {start_str[:5]}"
+        self.status_label.text = f"Schicht aktiv seit {start_str[:5]} Uhr"
 
     def stopp_erfassen(self, typ):
         if not self.aktuelle_schicht_id:
-            self.status_label.text = "⚠️ Starten!"
+            self.status_label.text = "⚠️ Zuerst Schicht starten!"
             return
 
         now_str = datetime.now().strftime("%H:%M:%S")
@@ -241,11 +241,11 @@ class LkwTrackerApp(App):
         conn.commit()
         conn.close()
 
-        self.status_label.text = f"{typ} ({now_str[:5]})"
+        self.status_label.text = f"{typ} erfasst ({now_str[:5]})"
 
     def feierabend_dialog_oeffnen(self):
         if not self.aktuelle_schicht_id:
-            self.status_label.text = "⚠️ Keine Schicht!"
+            self.status_label.text = "⚠️ Keine aktive Schicht!"
             return
 
         content = BoxLayout(orientation='vertical', padding=15, spacing=15)
@@ -311,7 +311,7 @@ class LkwTrackerApp(App):
         self.aktuelle_schicht_id = None
         
         h, m = divmod(netto_min, 60)
-        self.status_label.text = f"Feierabend: {h}h {m}m"
+        self.status_label.text = f"Feierabend! Netto: {h}h {m}m"
 
     def schichtberichte_anzeigen(self):
         conn = sqlite3.connect(get_db_path())
