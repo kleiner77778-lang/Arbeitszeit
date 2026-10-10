@@ -56,7 +56,7 @@ def init_db():
         print(f"DB Init Fehler: {e}")
 
 class MatrixRain(FloatLayout):
-    """Echter Matrix-Digital-Rain mit fließenden Zeichen"""
+    """Echter Matrix-Digital-Rain im Hintergrund"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.cols = []
@@ -66,17 +66,17 @@ class MatrixRain(FloatLayout):
     def init_matrix(self, dt):
         self.clear_widgets()
         self.cols = []
-        col_width = 25
-        num_cols = int(self.width / col_width) if self.width > 0 else 20
+        col_width = 30
+        num_cols = int(self.width / col_width) if self.width > 0 else 30
         
         for i in range(num_cols):
             lbl = Label(
                 text="",
-                font_size='15sp',
-                color=(0.1, 0.95, 0.3, 0.85),
-                pos=(i * col_width, random.randint(0, 500)),
+                font_size='14sp',
+                color=(0.1, 0.95, 0.3, 0.8),
+                pos=(i * col_width, random.randint(0, 400)),
                 size_hint=(None, None),
-                size=(col_width, 500),
+                size=(col_width, 400),
                 halign='center',
                 valign='top'
             )
@@ -85,9 +85,9 @@ class MatrixRain(FloatLayout):
             
             self.cols.append({
                 'widget': lbl,
-                'speed': random.uniform(2.0, 5.0),
-                'chars_len': random.randint(12, 22),
-                'y_pos': float(random.randint(0, 800))
+                'speed': random.uniform(2.0, 4.5),
+                'chars_len': random.randint(10, 18),
+                'y_pos': float(random.randint(0, 600))
             })
             
         Clock.schedule_interval(self.update_matrix, 0.05)
@@ -98,9 +98,9 @@ class MatrixRain(FloatLayout):
             col['widget'].text = text_lines
             
             col['y_pos'] -= col['speed']
-            if col['y_pos'] < -400:
-                col['y_pos'] = float(self.height + random.randint(50, 200))
-                col['speed'] = random.uniform(2.0, 5.0)
+            if col['y_pos'] < -300:
+                col['y_pos'] = float(self.height + random.randint(30, 150))
+                col['speed'] = random.uniform(2.0, 4.5)
             
             col['widget'].y = col['y_pos']
 
@@ -117,66 +117,69 @@ class LkwTrackerApp(App):
         
         root = FloatLayout()
         
-        # Matrix-Hintergrund als unterste Ebene
+        # 1. Matrix-Hintergrund als unterste Ebene
         matrix_bg = MatrixRain()
         root.add_widget(matrix_bg)
 
-        # Vordergrund-Bedienoberfläche
-        root_layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
-        root_layout.add_widget(Widget(size_hint_y=0.08))
+        # 2. Hauptlayout im Querformat (Vertikal aufgeteilt: Oben Status/Freiraum, Unten waagerechte Button-Leiste)
+        main_layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
 
-        root_layout.add_widget(Label(
-            text="LKW ARBEITSZEIT & GPS",
-            font_size='22sp',
+        # OBERER BEREICH: Freies Matrix-Fenster & Status
+        top_area = BoxLayout(orientation='horizontal', spacing=20, size_hint_y=0.5)
+        
+        top_area.add_widget(Label(
+            text="LKW TRACKER",
+            font_size='20sp',
             bold=True,
             color=(0.1, 1.0, 0.4, 1),
-            size_hint_y=None,
-            height='40dp',
-            halign='center'
+            halign='left',
+            valign='middle'
         ))
 
         self.status_label = Label(
             text="Status: Keine aktive Schicht",
             font_size='16sp',
             color=(0.8, 1.0, 0.8, 1),
-            size_hint_y=None,
-            height='35dp',
-            halign='center'
+            halign='right',
+            valign='middle'
         )
-        root_layout.add_widget(self.status_label)
+        self.status_label.bind(size=self.status_label.setter('text_size'))
+        top_area.add_widget(self.status_label)
         
-        root_layout.add_widget(Widget(size_hint_y=0.05))
+        main_layout.add_widget(top_area)
 
-        btn_layout = BoxLayout(orientation='vertical', spacing=12, size_hint_y=None, height='270dp')
+        # Mittlerer Freiraum damit das Matrix-Bild atmen kann
+        main_layout.add_widget(Widget(size_hint_y=0.1))
 
-        btn_start = Button(text="SCHICHTSTART", font_size='16sp', bold=True, size_hint_y=None, height='45dp', background_color=(0.0, 0.7, 0.2, 1), color=(1, 1, 1, 1))
+        # UNTERER BEREICH: Waagerechte Button-Leiste quer über den Bildschirm
+        btn_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=None, height='50dp')
+
+        btn_start = Button(text="START", font_size='14sp', bold=True, background_color=(0.0, 0.7, 0.2, 1), color=(1, 1, 1, 1))
         btn_start.bind(on_release=lambda x: self.schicht_starten())
         btn_layout.add_widget(btn_start)
 
-        btn_ankunft = Button(text="ANKUNFT / STOPP", font_size='16sp', bold=True, size_hint_y=None, height='45dp', background_color=(0.0, 0.4, 0.9, 1), color=(1, 1, 1, 1))
+        btn_ankunft = Button(text="ANKUNFT", font_size='14sp', bold=True, background_color=(0.0, 0.4, 0.9, 1), color=(1, 1, 1, 1))
         btn_ankunft.bind(on_release=lambda x: self.stopp_erfassen("Ankunft"))
         btn_layout.add_widget(btn_ankunft)
 
-        btn_weiterfahrt = Button(text="WEITERFAHRT", font_size='16sp', bold=True, size_hint_y=None, height='45dp', background_color=(0.9, 0.5, 0.0, 1), color=(1, 1, 1, 1))
+        btn_weiterfahrt = Button(text="WEITER", font_size='14sp', bold=True, background_color=(0.9, 0.5, 0.0, 1), color=(1, 1, 1, 1))
         btn_weiterfahrt.bind(on_release=lambda x: self.stopp_erfassen("Weiterfahrt"))
         btn_layout.add_widget(btn_weiterfahrt)
 
-        btn_feierabend = Button(text="FEIERABEND", font_size='16sp', bold=True, size_hint_y=None, height='45dp', background_color=(0.9, 0.1, 0.2, 1), color=(1, 1, 1, 1))
+        btn_feierabend = Button(text="FEIERABEND", font_size='14sp', bold=True, background_color=(0.9, 0.1, 0.2, 1), color=(1, 1, 1, 1))
         btn_feierabend.bind(on_release=lambda x: self.feierabend_dialog_oeffnen())
         btn_layout.add_widget(btn_feierabend)
 
-        btn_berichte = Button(text="SCHICHTBERICHTE", font_size='16sp', bold=True, size_hint_y=None, height='45dp', background_color=(0.3, 0.3, 0.5, 1), color=(1, 1, 1, 1))
+        btn_berichte = Button(text="BERICHTE", font_size='14sp', bold=True, background_color=(0.3, 0.3, 0.5, 1), color=(1, 1, 1, 1))
         btn_berichte.bind(on_release=lambda x: self.schichtberichte_anzeigen())
         btn_layout.add_widget(btn_berichte)
 
-        root_layout.add_widget(btn_layout)
-        root_layout.add_widget(Widget(size_hint_y=0.08))
+        main_layout.add_widget(btn_layout)
 
-        root.add_widget(root_layout)
+        root.add_widget(main_layout)
         return root
 
     def start_background_service(self):
-        """Hält den Bildschirm permanent wach für den Dauerbetrieb während der Schicht"""
         try:
             from android.runnable import run_on_ui_thread
             @run_on_ui_thread
@@ -223,7 +226,7 @@ class LkwTrackerApp(App):
 
     def stopp_erfassen(self, typ):
         if not self.aktuelle_schicht_id:
-            self.status_label.text = "Bitte zuerst Schicht starten!"
+            self.status_label.text = "⚠️ Zuerst Schicht starten!"
             return
 
         now_str = datetime.now().strftime("%H:%M:%S")
@@ -238,11 +241,11 @@ class LkwTrackerApp(App):
         conn.commit()
         conn.close()
 
-        self.status_label.text = f"{typ} erfasst um {now_str[:5]} Uhr"
+        self.status_label.text = f"{typ} erfasst ({now_str[:5]})"
 
     def feierabend_dialog_oeffnen(self):
         if not self.aktuelle_schicht_id:
-            self.status_label.text = "Keine aktive Schicht!"
+            self.status_label.text = "⚠️ Keine aktive Schicht!"
             return
 
         content = BoxLayout(orientation='vertical', padding=15, spacing=15)
