@@ -22,7 +22,7 @@ version = 1.0.0
 requirements = python3,kivy,kivymd,plyer
 
 # (str) Supported orientation
-orientation = landscape
+orientation = all
 
 # (bool) Indicate if the application should be fullscreen
 fullscreen = 0
