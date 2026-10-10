@@ -74,13 +74,12 @@ orientation = landscape
 # (str) The format used to package the app for release ('aab' or 'apk')
 android.format = apk
 
-# (str) Icon der App (greift direkt auf dein hochgeladenes icon.png zu)
-icon.filename = %(source.dir)s/icon.png
+# (str) Icon der App
+icon.filename = icon.png
 
 # (str) Vorschaubild / Ladebildschirm beim Start der App
-presplash.filename = %(source.dir)s/icon.png
+presplash.filename = icon.png
 
-#
 # Python for android (p4a) specific
 #
 
