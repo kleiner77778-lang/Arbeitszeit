@@ -1,15 +1,16 @@
 import os
 import sqlite3
 from datetime import datetime
-from kivy.lang import Builder
-from kivymd.app import MDApp
-from kivymd.uix.dialog import MDDialog
-from kivymd.uix.button import MDFlatButton, MDRaisedButton
-from kivymd.uix.textfield import MDTextField
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
+from kivy.uix.popup import Popup
 
 def get_db_path():
     try:
-        app = MDApp.get_running_app()
+        app = App.get_running_app()
         if app and app.user_data_dir:
             if not os.path.exists(app.user_data_dir):
                 os.makedirs(app.user_data_dir)
@@ -49,72 +50,54 @@ def init_db():
     except Exception as e:
         print(f"DB Init Fehler: {e}")
 
-KV = '''
-MDScreen:
-    md_bg_color: 0.1, 0.1, 0.1, 1
-
-    MDBoxLayout:
-        orientation: 'vertical'
-        padding: "20dp"
-        spacing: "15dp"
-
-        MDLabel:
-            text: "LKW Arbeitszeit & GPS Tracker"
-            font_style: "H5"
-            halign: "center"
-            theme_text_color: "Custom"
-            text_color: 1, 1, 1, 1
-            size_hint_y: None
-            height: "40dp"
-
-        MDLabel:
-            id: status_label
-            text: "Status: Bereitschaft"
-            font_style: "Subtitle1"
-            halign: "center"
-            theme_text_color: "Custom"
-            text_color: 0.8, 0.8, 0.8, 1
-            size_hint_y: None
-            height: "30dp"
-
-        MDRaisedButton:
-            text: "🟢 SCHICHTSTART"
-            font_size: "18sp"
-            size_hint: (1, 0.18)
-            md_bg_color: 0.1, 0.7, 0.3, 1
-            on_release: app.schicht_starten()
-
-        MDRaisedButton:
-            text: "📍 ANKUNFT / STOPP"
-            font_size: "18sp"
-            size_hint: (1, 0.18)
-            md_bg_color: 0.2, 0.5, 0.9, 1
-            on_release: app.stopp_erfassen("Ankunft")
-
-        MDRaisedButton:
-            text: "🚛 WEITERFAHRT"
-            font_size: "18sp"
-            size_hint: (1, 0.18)
-            md_bg_color: 0.9, 0.6, 0.1, 1
-            on_release: app.stopp_erfassen("Weiterfahrt")
-
-        MDRaisedButton:
-            text: "🔴 FEIERABEND"
-            font_size: "18sp"
-            size_hint: (1, 0.18)
-            md_bg_color: 0.8, 0.2, 0.2, 1
-            on_release: app.feierabend_dialog_oeffnen()
-'''
-
-class LkwTrackerApp(MDApp):
-    dialog = None
+class LkwTrackerApp(App):
     aktuelle_schicht_id = None
 
     def build(self):
-        self.theme_cls.theme_style = "Dark"
-        self.theme_cls.primary_palette = "Blue"
         init_db()
-        return Builder.load_string(KV)
+        
+        # Hauptlayout
+        layout = BoxLayout(orientation='vertical', padding=25, spacing=20)
+        
+        # Titel
+        layout.add_widget(Label(
+            text="LKW Arbeitszeit & GPS Tracker",
+            font_size='22sp',
+            bold=True,
+            size_hint_y=None,
+            height='50dp',
+            halign='center'
+        ))
+
+        # Statusanzeige
+        self.status_label = Label(
+            text="Status: Bereitschaft",
+            font_size='18sp',
+            color=(0.8, 0.8, 0.8, 1),
+            size_hint_y=None,
+            height='40dp',
+            halign='center'
+        )
+        layout.add_widget(self.status_label)
+
+        # Buttons mit Farben (RGBA)
+        btn_start = Button(text="🟢 SCHICHTSTART", font_size='18sp', bold=True, background_color=(0.1, 0.7, 0.3, 1))
+        btn_start.bind(on_release=lambda x: self.schicht_starten())
+        layout.add_widget(btn_start)
+
+        btn_ankunft = Button(text="📍 ANKUNFT / STOPP", font_size='18sp', bold=True, background_color=(0.2, 0.5, 0.9, 1))
+        btn_ankunft.bind(on_release=lambda x: self.stopp_erfassen("Ankunft"))
+        layout.add_widget(btn_ankunft)
+
+        btn_weiterfahrt = Button(text="🚛 WEITERFAHRT", font_size='18sp', bold=True, background_color=(0.9, 0.6, 0.1, 1))
+        btn_weiterfahrt.bind(on_release=lambda x: self.stopp_erfassen("Weiterfahrt"))
+        layout.add_widget(btn_weiterfahrt)
+
+        btn_feierabend = Button(text="🔴 FEIERABEND", font_size='18sp', bold=True, background_color=(0.8, 0.2, 0.2, 1))
+        btn_feierabend.bind(on_release=lambda x: self.feierabend_dialog_oeffnen())
+        layout.add_widget(btn_feierabend)
+
+        return layout
 
     def get_gps_location(self):
         try:
@@ -144,11 +127,11 @@ class LkwTrackerApp(MDApp):
         conn.commit()
         conn.close()
 
-        self.root.ids.status_label.text = f"Schicht aktiv seit {start_str[:5]} Uhr"
+        self.status_label.text = f"Schicht aktiv seit {start_str[:5]} Uhr"
 
     def stopp_erfassen(self, typ):
         if not self.aktuelle_schicht_id:
-            self.root.ids.status_label.text = "⚠️ Bitte zuerst Schicht starten!"
+            self.status_label.text = "⚠️ Bitte zuerst Schicht starten!"
             return
 
         now_str = datetime.now().strftime("%H:%M:%S")
@@ -163,30 +146,40 @@ class LkwTrackerApp(MDApp):
         conn.commit()
         conn.close()
 
-        self.root.ids.status_label.text = f"📍 {typ} erfasst um {now_str[:5]} Uhr"
+        self.status_label.text = f"📍 {typ} erfasst um {now_str[:5]} Uhr"
 
     def feierabend_dialog_oeffnen(self):
         if not self.aktuelle_schicht_id:
-            self.root.ids.status_label.text = "⚠️ Keine aktive Schicht!"
+            self.status_label.text = "⚠️ Keine aktive Schicht!"
             return
 
-        self.pause_input = MDTextField(
-            hint_text="Pausenminuten eingeben (z. B. 45)",
-            input_filter="int"
-        )
-        self.dialog = MDDialog(
-            title="Feierabend & Pause",
-            type="custom",
-            content_cls=self.pause_input,
-            buttons=[
-                MDFlatButton(text="Abbrechen", on_release=lambda x: self.dialog.dismiss()),
-                MDRaisedButton(text="Speichern", on_release=lambda x: self.schicht_beenden())
-            ],
-        )
-        self.dialog.open()
+        content = BoxLayout(orientation='vertical', padding=15, spacing=15)
+        content.add_widget(Label(text="Pausenminuten eingeben:", font_size='16sp'))
+        
+        self.pause_input = TextInput(text="45", font_size='18sp', multiline=False, input_filter='int')
+        content.add_widget(self.pause_input)
+
+        btn_layout = BoxLayout(size_hint_y=None, height='50dp', spacing=10)
+        btn_abbrechen = Button(text="Abbrechen")
+        btn_speichern = Button(text="Speichern", background_color=(0.1, 0.7, 0.3, 1))
+
+        self.popup = Popup(title="Feierabend & Pause", content=content, size_hint=(0.8, 0.4))
+        
+        btn_abbrechen.bind(on_release=self.popup.dismiss)
+        btn_speichern.bind(on_release=lambda x: self.schicht_beenden())
+
+        btn_layout.add_widget(btn_abbrechen)
+        btn_layout.add_widget(btn_speichern)
+        content.add_widget(btn_layout)
+
+        self.popup.open()
 
     def schicht_beenden(self):
-        pause_min = int(self.pause_input.text) if self.pause_input.text and self.pause_input.text.isdigit() else 0
+        try:
+            pause_min = int(self.pause_input.text) if self.pause_input.text else 0
+        except ValueError:
+            pause_min = 0
+
         now = datetime.now()
         ende_str = now.strftime("%H:%M:%S")
 
@@ -210,11 +203,13 @@ class LkwTrackerApp(MDApp):
         conn.commit()
         conn.close()
 
-        self.dialog.dismiss()
+        if self.popup:
+            self.popup.dismiss()
+            
         self.aktuelle_schicht_id = None
         
         h, m = divmod(netto_min, 60)
-        self.root.ids.status_label.text = f"Feierabend! Netto-Arbeitszeit: {h}h {m}m"
+        self.status_label.text = f"Feierabend! Netto: {h}h {m}m"
 
 if __name__ == '__main__':
     LkwTrackerApp().run()
