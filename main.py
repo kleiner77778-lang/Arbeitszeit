@@ -58,13 +58,10 @@ class LkwTrackerApp(App):
     def build(self):
         init_db()
         
-        # Hauptlayout mit äußerem Abstand
         root_layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
         
-        # Freiraum oben
         root_layout.add_widget(Widget(size_hint_y=0.1))
 
-        # Titel
         root_layout.add_widget(Label(
             text="LKW Arbeitszeit & GPS Tracker",
             font_size='20sp',
@@ -74,7 +71,6 @@ class LkwTrackerApp(App):
             halign='center'
         ))
 
-        # Statusanzeige
         self.status_label = Label(
             text="Status: Keine aktive Schicht",
             font_size='16sp',
@@ -87,7 +83,6 @@ class LkwTrackerApp(App):
         
         root_layout.add_widget(Widget(size_hint_y=0.05))
 
-        # Button-Container (kleinere, kompakte Buttons)
         btn_layout = BoxLayout(orientation='vertical', spacing=12, size_hint_y=None, height='270dp')
 
         btn_start = Button(text="SCHICHTSTART", font_size='16sp', bold=True, size_hint_y=None, height='45dp', background_color=(0.1, 0.6, 0.3, 1))
@@ -111,8 +106,6 @@ class LkwTrackerApp(App):
         btn_layout.add_widget(btn_berichte)
 
         root_layout.add_widget(btn_layout)
-
-        # Freiraum unten
         root_layout.add_widget(Widget(size_hint_y=0.1))
 
         return root_layout
@@ -204,14 +197,21 @@ class LkwTrackerApp(App):
         conn = sqlite3.connect(get_db_path())
         cursor = conn.cursor()
         
-        cursor.execute("SELECT start_zeit FROM schichten WHERE id = ?", (self.aktuelle_schicht_id,))
+        cursor.execute("SELECT start_zeit, datum FROM schichten WHERE id = ?", (self.aktuelle_schicht_id,))
         row = cursor.fetchone()
-        start_str = row[0] if row else "00:00:00"
-
+        if not row:
+            conn.close()
+            return
+        
+        start_str, datum_str = row
         fmt = "%H:%M:%S"
         t_start = datetime.strptime(start_str, fmt)
         t_ende = datetime.strptime(ende_str, fmt)
+        
         brutto_min = int((t_ende - t_start).total_seconds() / 60)
+        if brutto_min < 0:
+            brutto_min += 24 * 60 # Falls über Mitternacht
+            
         netto_min = max(0, brutto_min - pause_min)
 
         cursor.execute(
@@ -232,21 +232,26 @@ class LkwTrackerApp(App):
     def schichtberichte_anzeigen(self):
         conn = sqlite3.connect(get_db_path())
         cursor = conn.cursor()
-        cursor.execute("SELECT datum, start_zeit, ende_zeit, netto_min, status FROM schichten ORDER BY id DESC LIMIT 10")
+        cursor.execute("SELECT id, datum, start_zeit, ende_zeit, pause_min, netto_min, status FROM schichten ORDER BY id DESC LIMIT 10")
         schichten = cursor.fetchall()
-        conn.close()
 
         bericht_text = "Letzte Schichten:\n\n"
         if not schichten:
-        # Falls keine Daten vorhanden sind
             bericht_text += "Noch keine Schichten aufgezeichnet."
         else:
             for s in schichten:
-                datum, start, ende, netto, status = s
+                schicht_id, datum, start, ende, pause, netto, status = s
                 netto_h, netto_m = divmod(netto if netto else 0, 60)
                 ende_zeit = ende[:5] if ende else "Aktiv"
                 start_zeit = start[:5] if start else ""
-                bericht_text += f"📅 {datum}\n⏱️ {start_zeit} - {ende_zeit} | Netto: {netto_h}h {netto_m}m\nStatus: {status}\n--------------------\n"
+                pause_zeit = pause if pause else 0
+                
+                bericht_text += f"📅 {datum}\n"
+                bericht_text += f"⏱️ {start_zeit} - {ende_zeit} | Pause: {pause_zeit} min\n"
+                bericht_text += f"👉 Netto-Arbeitszeit: {netto_h}h {netto_m}m\n"
+                bericht_text += f"Status: {status}\n--------------------\n"
+
+        conn.close()
 
         content = BoxLayout(orientation='vertical', padding=10, spacing=10)
         
@@ -257,7 +262,7 @@ class LkwTrackerApp(App):
         content.add_widget(scroll)
 
         btn_schliessen = Button(text="Schließen", size_hint_y=None, height='45dp')
-        popup = Popup(title="Schichtberichte", content=content, size_hint=(0.9, 0.8))
+        popup = Popup(title="Schichtberichte & Arbeitszeit", content=content, size_hint=(0.9, 0.8))
         btn_schliessen.bind(on_release=popup.dismiss)
         content.add_widget(btn_schliessen)
 
