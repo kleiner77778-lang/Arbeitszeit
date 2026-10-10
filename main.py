@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from datetime import datetime
 from kivy.lang import Builder
@@ -6,10 +7,20 @@ from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.textfield import MDTextField
 
-DB_FILE = 'arbeitszeiten_app.db'
+def get_db_path():
+    try:
+        app = MDApp.get_running_app()
+        if app and app.user_data_dir:
+            if not os.path.exists(app.user_data_dir):
+                os.makedirs(app.user_data_dir)
+            return os.path.join(app.user_data_dir, 'arbeitszeiten_app.db')
+    except Exception:
+        pass
+    return 'arbeitszeiten_app.db'
 
 def init_db():
-    conn = sqlite3.connect(DB_FILE)
+    db_path = get_db_path()
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS schichten (
@@ -120,7 +131,7 @@ class LkwTrackerApp(MDApp):
         datum_str = now.strftime("%Y-%m-%d")
         start_str = now.strftime("%H:%M:%S")
 
-        conn = sqlite3.connect(DB_FILE)
+        conn = sqlite3.connect(get_db_path())
         cursor = conn.cursor()
         cursor.execute(
             "INSERT INTO schichten (datum, start_zeit, status) VALUES (?, ?, 'aktiv')",
@@ -140,7 +151,7 @@ class LkwTrackerApp(MDApp):
         now_str = datetime.now().strftime("%H:%M:%S")
         lat, lon = self.get_gps_location()
 
-        conn = sqlite3.connect(DB_FILE)
+        conn = sqlite3.connect(get_db_path())
         cursor = conn.cursor()
         cursor.execute(
             "INSERT INTO stopps (schicht_id, zeitstempel, typ, latitude, longitude) VALUES (?, ?, ?, ?, ?)",
@@ -176,7 +187,7 @@ class LkwTrackerApp(MDApp):
         now = datetime.now()
         ende_str = now.strftime("%H:%M:%S")
 
-        conn = sqlite3.connect(DB_FILE)
+        conn = sqlite3.connect(get_db_path())
         cursor = conn.cursor()
         
         cursor.execute("SELECT start_zeit FROM schichten WHERE id = ?", (self.aktuelle_schicht_id,))
