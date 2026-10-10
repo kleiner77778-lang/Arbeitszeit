@@ -7,6 +7,8 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.popup import Popup
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.widget import Widget
 
 def get_db_path():
     try:
@@ -56,48 +58,64 @@ class LkwTrackerApp(App):
     def build(self):
         init_db()
         
-        # Hauptlayout
-        layout = BoxLayout(orientation='vertical', padding=25, spacing=20)
+        # Hauptlayout mit äußerem Abstand
+        root_layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
         
+        # Freiraum oben
+        root_layout.add_widget(Widget(size_hint_y=0.1))
+
         # Titel
-        layout.add_widget(Label(
+        root_layout.add_widget(Label(
             text="LKW Arbeitszeit & GPS Tracker",
-            font_size='22sp',
+            font_size='20sp',
             bold=True,
             size_hint_y=None,
-            height='50dp',
+            height='40dp',
             halign='center'
         ))
 
         # Statusanzeige
         self.status_label = Label(
-            text="Status: Bereitschaft",
-            font_size='18sp',
+            text="Status: Keine aktive Schicht",
+            font_size='16sp',
             color=(0.8, 0.8, 0.8, 1),
             size_hint_y=None,
-            height='40dp',
+            height='35dp',
             halign='center'
         )
-        layout.add_widget(self.status_label)
+        root_layout.add_widget(self.status_label)
+        
+        root_layout.add_widget(Widget(size_hint_y=0.05))
 
-        # Buttons mit Farben (RGBA)
-        btn_start = Button(text="🟢 SCHICHTSTART", font_size='18sp', bold=True, background_color=(0.1, 0.7, 0.3, 1))
+        # Button-Container (kleinere, kompakte Buttons)
+        btn_layout = BoxLayout(orientation='vertical', spacing=12, size_hint_y=None, height='270dp')
+
+        btn_start = Button(text="SCHICHTSTART", font_size='16sp', bold=True, size_hint_y=None, height='45dp', background_color=(0.1, 0.6, 0.3, 1))
         btn_start.bind(on_release=lambda x: self.schicht_starten())
-        layout.add_widget(btn_start)
+        btn_layout.add_widget(btn_start)
 
-        btn_ankunft = Button(text="📍 ANKUNFT / STOPP", font_size='18sp', bold=True, background_color=(0.2, 0.5, 0.9, 1))
+        btn_ankunft = Button(text="ANKUNFT / STOPP", font_size='16sp', bold=True, size_hint_y=None, height='45dp', background_color=(0.1, 0.4, 0.8, 1))
         btn_ankunft.bind(on_release=lambda x: self.stopp_erfassen("Ankunft"))
-        layout.add_widget(btn_ankunft)
+        btn_layout.add_widget(btn_ankunft)
 
-        btn_weiterfahrt = Button(text="🚛 WEITERFAHRT", font_size='18sp', bold=True, background_color=(0.9, 0.6, 0.1, 1))
+        btn_weiterfahrt = Button(text="WEITERFAHRT", font_size='16sp', bold=True, size_hint_y=None, height='45dp', background_color=(0.8, 0.5, 0.1, 1))
         btn_weiterfahrt.bind(on_release=lambda x: self.stopp_erfassen("Weiterfahrt"))
-        layout.add_widget(btn_weiterfahrt)
+        btn_layout.add_widget(btn_weiterfahrt)
 
-        btn_feierabend = Button(text="🔴 FEIERABEND", font_size='18sp', bold=True, background_color=(0.8, 0.2, 0.2, 1))
+        btn_feierabend = Button(text="FEIERABEND", font_size='16sp', bold=True, size_hint_y=None, height='45dp', background_color=(0.8, 0.2, 0.2, 1))
         btn_feierabend.bind(on_release=lambda x: self.feierabend_dialog_oeffnen())
-        layout.add_widget(btn_feierabend)
+        btn_layout.add_widget(btn_feierabend)
 
-        return layout
+        btn_berichte = Button(text="SCHICHTBERICHTE", font_size='16sp', bold=True, size_hint_y=None, height='45dp', background_color=(0.4, 0.4, 0.4, 1))
+        btn_berichte.bind(on_release=lambda x: self.schichtberichte_anzeigen())
+        btn_layout.add_widget(btn_berichte)
+
+        root_layout.add_widget(btn_layout)
+
+        # Freiraum unten
+        root_layout.add_widget(Widget(size_hint_y=0.1))
+
+        return root_layout
 
     def get_gps_location(self):
         try:
@@ -131,7 +149,7 @@ class LkwTrackerApp(App):
 
     def stopp_erfassen(self, typ):
         if not self.aktuelle_schicht_id:
-            self.status_label.text = "⚠️ Bitte zuerst Schicht starten!"
+            self.status_label.text = "Bitte zuerst Schicht starten!"
             return
 
         now_str = datetime.now().strftime("%H:%M:%S")
@@ -146,11 +164,11 @@ class LkwTrackerApp(App):
         conn.commit()
         conn.close()
 
-        self.status_label.text = f"📍 {typ} erfasst um {now_str[:5]} Uhr"
+        self.status_label.text = f"{typ} erfasst um {now_str[:5]} Uhr"
 
     def feierabend_dialog_oeffnen(self):
         if not self.aktuelle_schicht_id:
-            self.status_label.text = "⚠️ Keine aktive Schicht!"
+            self.status_label.text = "Keine aktive Schicht!"
             return
 
         content = BoxLayout(orientation='vertical', padding=15, spacing=15)
@@ -161,7 +179,7 @@ class LkwTrackerApp(App):
 
         btn_layout = BoxLayout(size_hint_y=None, height='50dp', spacing=10)
         btn_abbrechen = Button(text="Abbrechen")
-        btn_speichern = Button(text="Speichern", background_color=(0.1, 0.7, 0.3, 1))
+        btn_speichern = Button(text="Speichern", background_color=(0.1, 0.6, 0.3, 1))
 
         self.popup = Popup(title="Feierabend & Pause", content=content, size_hint=(0.8, 0.4))
         
@@ -210,6 +228,40 @@ class LkwTrackerApp(App):
         
         h, m = divmod(netto_min, 60)
         self.status_label.text = f"Feierabend! Netto: {h}h {m}m"
+
+    def schichtberichte_anzeigen(self):
+        conn = sqlite3.connect(get_db_path())
+        cursor = conn.cursor()
+        cursor.execute("SELECT datum, start_zeit, ende_zeit, netto_min, status FROM schichten ORDER BY id DESC LIMIT 10")
+        schichten = cursor.fetchall()
+        conn.close()
+
+        bericht_text = "Letzte Schichten:\n\n"
+        if not schichten:
+        # Falls keine Daten vorhanden sind
+            bericht_text += "Noch keine Schichten aufgezeichnet."
+        else:
+            for s in schichten:
+                datum, start, ende, netto, status = s
+                netto_h, netto_m = divmod(netto if netto else 0, 60)
+                ende_zeit = ende[:5] if ende else "Aktiv"
+                start_zeit = start[:5] if start else ""
+                bericht_text += f"📅 {datum}\n⏱️ {start_zeit} - {ende_zeit} | Netto: {netto_h}h {netto_m}m\nStatus: {status}\n--------------------\n"
+
+        content = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        scroll = ScrollView(size_hint=(1, 0.8))
+        lbl = Label(text=bericht_text, font_size='14sp', size_hint_y=None, halign='left', valign='top')
+        lbl.bind(texture_size=lambda *x: setattr(lbl, 'height', lbl.texture_size[1]))
+        scroll.add_widget(lbl)
+        content.add_widget(scroll)
+
+        btn_schliessen = Button(text="Schließen", size_hint_y=None, height='45dp')
+        popup = Popup(title="Schichtberichte", content=content, size_hint=(0.9, 0.8))
+        btn_schliessen.bind(on_release=popup.dismiss)
+        content.add_widget(btn_schliessen)
+
+        popup.open()
 
 if __name__ == '__main__':
     LkwTrackerApp().run()
