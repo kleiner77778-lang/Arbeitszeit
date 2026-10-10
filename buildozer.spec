@@ -18,8 +18,8 @@ source.include_exts = py,png,jpg,kv,atlas
 # (str) Application versioning
 version = 1.0.0
 
-# (list) Application requirements
-requirements = python3,kivy==2.2.1,kivymd==1.2.0,pillow,plyer
+# (list) Application requirements (Pillow entfernt)
+requirements = python3,kivy==2.2.1,kivymd==1.2.0,plyer
 
 # (str) Supported orientation
 orientation = portrait
