@@ -32,8 +32,9 @@ jobs:
 
     - name: Install System Dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
+        sudo rm -f /var/lib/apt/lists/lock
+        sudo apt-get update -y
+        sudo apt-get install -y --no-install-recommends \
           python3-pip \
           python3-setuptools \
           python3-wheel \
