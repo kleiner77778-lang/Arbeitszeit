@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
 
     steps:
     - name: Checkout Code
@@ -52,11 +52,7 @@ jobs:
         pip install cython==0.29.33 buildozer
 
     - name: Build APK with Buildozer
-      env:
-        PYTHON: python3.10
-      run: |
-        export PYTHON=python3.10
-        yes | buildozer android debug > build_log.txt 2>&1 || (cat build_log.txt && exit 1)
+      run: yes | buildozer android debug > build_log.txt 2>&1 || (cat build_log.txt && exit 1)
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
