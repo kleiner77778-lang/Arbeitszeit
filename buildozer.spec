@@ -56,7 +56,7 @@ presplash.filename = icon.png
 #
 
 # (str) python-for-android branch to use (stabilisiert den Build-Prozess)
-p4a.branch = release
+p4a.branch = master
 
 # (bool) Indicate whether the application should be fullscreen or not
 fullscreen = 1
