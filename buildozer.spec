@@ -28,7 +28,8 @@ source.exclude_patterns = license,images/*.jpg
 version = 1.0.0
 
 # (list) Application requirements
-requirements = python3,kivy,sqlite3,plyer,jnius
+# Feste Versionen für Kivy und Cython verhindern den config.pxi Fehler
+requirements = python3,kivy==2.2.1,cython==0.29.33,sqlite3,plyer,jnius
 
 # (list) Permissions
 android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
@@ -37,29 +38,4 @@ android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,WRITE
 android.api = 33
 
 # (int) Minimum API your APK will support.
-android.minapi = 21
-
-# (str) Supported orientations: landscape (Querformat fürs Armaturenbrett)
-orientation = landscape
-
-# (str) The format used to package the app for release ('aab' or 'apk')
-android.format = apk
-
-# (str) Icon der App
-icon.filename = icon.png
-
-# (str) Vorschaubild / Ladebildschirm beim Start der App
-presplash.filename = icon.png
-
-#
-# Python for android (p4a) specific
-#
-
-# (str) python-for-android branch to use
-p4a.branch = master
-
-# (bool) Indicate whether the application should be fullscreen or not
-fullscreen = 1
-
-# (string) Presplash background color (Hex code)
-presplash.color = #000000
+android
