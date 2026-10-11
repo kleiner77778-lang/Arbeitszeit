@@ -60,6 +60,7 @@ jobs:
     - name: Build APK with Buildozer
       run: |
         buildozer clean || true
+        export CFLAGS="-Wno-error=implicit-function-declaration -Wno-error=error"
         yes | buildozer -v android debug > build_log.txt 2>&1 || (cat build_log.txt && exit 1)
 
     - name: Upload APK Artifact
