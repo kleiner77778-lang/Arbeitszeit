@@ -46,10 +46,10 @@ jobs:
           libffi-dev \
           libssl-dev
 
-    - name: Install Buildozer & Cython
+    - name: Install Buildozer
       run: |
         pip install --upgrade pip
-        pip install cython==0.29.33 buildozer
+        pip install buildozer
 
     - name: Build APK with Buildozer
       run: yes | buildozer android debug > build_log.txt 2>&1 || (cat build_log.txt && exit 1)
