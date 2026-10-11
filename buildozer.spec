@@ -18,8 +18,8 @@ source.include_exts = py,png,jpg,kv,atlas
 # (str) Application versioning
 version = 1.0.0
 
-# (list) Application requirements (Automatische Kompatibilität)
-requirements = python3,kivy,kivymd,plyer
+# (list) Application requirements
+requirements = python3,kivy,kivymd,plyer,requests,urllib3,certifi,jnius
 
 # (str) Supported orientation
 orientation = landscape
@@ -28,7 +28,7 @@ orientation = landscape
 fullscreen = 0
 
 # (list) Permissions
-android.permissions = ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET
+android.permissions = ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, FOREGROUND_SERVICE
 
 # (int) Target Android API
 android.api = 33
@@ -47,6 +47,13 @@ android.archs = arm64-v8a
 
 # (bool) Enable AndroidX support
 android.enable_androidx = True
+
+# (str) App icon and presplash
+icon.filename = icon.png
+presplash.filename = icon.png
+
+# (str) Background service configuration (läuft im Hintergrund weiter, auch bei gesperrtem Bildschirm)
+services = tracker:service.py
 
 [buildozer]
 
