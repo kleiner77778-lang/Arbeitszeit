@@ -1,8 +1,6 @@
 import sqlite3
 import datetime
-import math
 from kivy.lang import Builder
-from kivy.clock import Clock
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -132,28 +130,24 @@ class LKWTrackerApp(MDApp):
     def on_gps_location(self, **kwargs):
         lat = kwargs.get('lat')
         lon = kwargs.get('lon')
-        speed = kwargs.get('speed', 0) # Geschwindigkeit in m/s falls verfügbar
+        speed = kwargs.get('speed', 0)
         
         if speed is None:
             speed = 0
         
-        # Umrechnung von m/s in km/h
         speed_kmh = speed * 3.6
-
         now = datetime.datetime.now()
 
-        # Intelligente Logik für Stau / Standzeit vs. Weiterfahrt
-        if speed_kmh < 5.0: # Unter 5 km/h (Stau oder Stillstand)
+        # Intelligente Stau- und Standzeit-Erkennung
+        if speed_kmh < 5.0:
             if self.is_moving:
-                # Wir haben gerade angehalten oder stecken im Stau
                 if self.stopped_since is None:
                     self.stopped_since = now
                 else:
-                    # Wenn wir länger als 3 Minuten (< 5 km/h) stehen -> Automatische Ankunft / Standzeit
                     if (now - self.stopped_since).total_seconds() > 180:
                         self.is_moving = False
                         self.log_event("Automatische Ankunft / Standzeit", f"Lat: {lat:.4f}, Lon: {lon:.4f}")
-        else: # Wieder schneller als 10 km/h -> Weiterfahrt
+        else:
             if speed_kmh > 10.0 and not self.is_moving:
                 self.is_moving = True
                 self.stopped_since = None
@@ -184,4 +178,15 @@ class LKWTrackerApp(MDApp):
             message = "🚚 *LKW Auto-Protokoll*:\n" + "\n".join([f"{r[0]} - *{r[1]}* ({r[2]})" for r in rows])
             
             url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-            payload = {"chat_id
+            payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"}
+            response = requests.post(url, json=payload, timeout=5)
+            
+            if response.status_code == 200:
+                self.root.ids.status_label.text = "Status: Erfolgreich an Telegram gesendet!"
+            else:
+                self.root.ids.status_label.text = "Status: Telegram-Fehler beim Senden."
+        except Exception as e:
+            self.root.ids.status_label.text = f"Status: Fehler ({str(e)})"
+
+if __name__ == '__main__':
+    LKWTrackerApp().run()
