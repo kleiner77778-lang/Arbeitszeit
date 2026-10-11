@@ -28,7 +28,8 @@ source.exclude_patterns = license,images/*.jpg
 version = 1.0.0
 
 # (list) Application requirements
-requirements = python3,kivy==2.2.1,cython==0.29.33,sqlite3,plyer,jnius
+# setuptools<66 behebt den Kompilierungsfehler beim hostpython3-Build
+requirements = python3,kivy==2.2.1,cython==0.29.33,setuptools<66,sqlite3,plyer,jnius
 
 # (list) Permissions
 android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
@@ -55,7 +56,7 @@ presplash.filename = icon.png
 # Python for android (p4a) specific
 #
 
-# (str) python-for-android branch to use (stabilisiert den Build-Prozess)
+# (str) python-for-android branch to use
 p4a.branch = master
 
 # (bool) Indicate whether the application should be fullscreen or not
