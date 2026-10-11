@@ -32,6 +32,7 @@ jobs:
 
     - name: Install System Dependencies
       run: |
+        sudo apt-get remove -y command-not-found || true
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
           python3-pip \
