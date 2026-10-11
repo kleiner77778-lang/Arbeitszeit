@@ -6,60 +6,52 @@ title = LKW Tracker
 # (str) Package name
 package.name = lkwtracker
 
-# (str) Package domain (needed for android packaging)
-package.domain = org.lkw
+# (str) Package domain
+package.domain = org.oliver.lkwtracker
 
-# (str) Source code where the application resides
+# (str) Source code directory
 source.dir = .
 
-# (list) Source files to include (let it include python and png files)
+# (list) Source files to include
 source.include_exts = py,png,jpg,kv,atlas
-
-# (list) Source files to exclude (let it empty)
-source.exclude_exts = spec
-
-# (list) List of directory to exclude (let it empty)
-source.exclude_dirs = tests, bin, venv
-
-# (list) List of exclusions using pattern matching
-source.exclude_patterns = license,images/*.jpg
 
 # (str) Application versioning
 version = 1.0.0
 
-# (list) Application requirements
-requirements = python3,kivy==2.2.1,cython==0.29.33,sqlite3,plyer,jnius
+# (list) Application requirements (Automatische Kompatibilität)
+requirements = python3,kivy,kivymd,plyer
 
-# (list) Permissions
-android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
-
-# (int) Target Android API, should be as high as possible.
-android.api = 33
-
-# (int) Minimum API your APK will support.
-android.minapi = 21
-
-# (str) Supported orientations: landscape (Querformat fürs Armaturenbrett)
+# (str) Supported orientation
 orientation = landscape
 
-# (str) The format used to package the app for release ('aab' or 'apk')
-android.format = apk
+# (bool) Indicate if the application should be fullscreen
+fullscreen = 0
 
-# (str) Icon der App
-icon.filename = icon.png
+# (list) Permissions
+android.permissions = ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET
 
-# (str) Vorschaubild / Ladebildschirm beim Start der App
-presplash.filename = icon.png
+# (int) Target Android API
+android.api = 33
 
-#
-# Python for android (p4a) specific
-#
+# (int) Minimum API required
+android.minapi = 24
 
-# (str) python-for-android branch to use
-p4a.branch = master
+# (str) Android NDK version
+android.ndk = 25b
 
-# (bool) Indicate whether the application should be fullscreen or not
-fullscreen = 1
+# (bool) Automatically accept sdk licenses
+android.accept_sdk_license = True
 
-# (string) Presplash background color (Hex code)
-presplash.color = #000000
+# (str) The Android arch to build for
+android.archs = arm64-v8a
+
+# (bool) Enable AndroidX support
+android.enable_androidx = True
+
+[buildozer]
+
+# (int) Log level
+log_level = 2
+
+# (int) Display warning if buildozer is run as root
+warn_on_root = 1
