@@ -33,6 +33,7 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo rm -f /var/lib/apt/lists/lock
+        sudo sed -i "/DPkg::Post-Invoke/d" /etc/apt/apt.conf.d/00aptitude || true
         sudo apt-get update -y
         sudo apt-get install -y --no-install-recommends \
           python3-pip \
