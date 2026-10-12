@@ -1,111 +1,58 @@
-import kivy
-kivy.require('2.1.0')
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.textfield import MDTextField
 
-from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
-from kivy.uix.textinput import TextInput
-from kivy.uix.label import Label
-from kivy.utils import platform
-import subprocess
-import datetime
-import os
+# (Füge das in deine LKWTrackerApp-Klasse in der main.py ein:)
 
-class LKWTrackerApp(App):
-    def build(self):
-        # Hauptlayout im Querformat-tauglichen Design
-        layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
-        
-        # Titel
-        title_label = Label(
-            text="🚚 LKW GPS & Live-Logcat Tracker",
-            size_hint_y=None,
-            height="40dp",
-            font_size='18sp',
-            halign='center'
+    def end_shift_prompt(self):
+        # Öffnet ein kleines Eingabefenster für die gemachte Pause beim Feierabend
+        self.pause_input = MDTextField(
+            hint_text="Pause in Minuten (z.B. 30)",
+            input_filter="int",
+            text="30"
         )
-        layout.add_widget(title_label)
         
-        # Status / Logcat Textfeld (zeigt dir immer direkt an, was passiert)
-        self.log_output = TextInput(
-            text="App gestartet. Initialisiere...\n",
-            readonly=True,
-            background_color=(0.1, 0.1, 0.1, 1),
-            foreground_color=(0, 1, 0, 1)  # Grüner Matrix-Look
+        self.dialog = MDDialog(
+            title="Schicht beenden & Pause eintragen",
+            text="Bitte gib an, wie viel Minuten Pause du insgesamt gemacht hast:",
+            type="custom",
+            content_style="box",
+            content=self.pause_input,
+            buttons=[
+                MDFlatButton(
+                    text="ABBRECHEN",
+                    on_release=lambda x: self.dialog.dismiss()
+                ),
+                MDFlatButton(
+                    text="BERECHNEN & SENDEN",
+                    on_release=self.process_end_shift
+                ),
+            ],
         )
-        layout.add_widget(self.log_output)
-        
-        # Button-Leiste unten
-        btn_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height="50dp", spacing=10)
-        
-        btn_logs = Button(
-            text="Logs aktualisieren",
-            background_color=(0.2, 0.6, 0.8, 1)
-        )
-        btn_logs.bind(on_press=self.fetch_logs)
-        btn_layout.add_widget(btn_logs)
-        
-        btn_gps = Button(
-            text="GPS Starten",
-            background_color=(0.2, 0.7, 0.2, 1)
-        )
-        btn_gps.bind(on_press=self.start_gps_tracking)
-        btn_layout.add_widget(btn_gps)
-        
-        layout.add_widget(btn_layout)
-        
-        # Berechtigungen direkt beim Start anfordern (mit kleiner Verzögerung/Sicherheit)
-        self.request_permissions_on_startup()
-        
-        return layout
+        self.dialog.open()
 
-    def request_permissions_on_startup(self):
-        if platform == 'android':
-            try:
-                from android.permissions import request_permissions, Permission
-                request_permissions([
-                    Permission.ACCESS_FINE_LOCATION,
-                    Permission.ACCESS_COARSE_LOCATION
-                ])
-                self.log_output.text += f"[{datetime.datetime.now().strftime('%H:%M:%S সিস্ট')}] Berechtigungen angefragt.\n"
-            except Exception as e:
-                self.log_output.text += f"Fehler bei Rechte-Anfrage: {str(e)}\n"
-        else:
-            self.log_output.text += "Läuft im Emulator / PC (Kein Android).\n"
+    def process_end_shift(self, instance):
+        pause_min = int(self.pause_input.text) if self.pause_input.text else 0
+        self.dialog.dismiss()
+        
+        # Schicht-Ende in DB loggen
+        self.log_event("Schicht Beendet", f"Nachträgliche Pause: {pause_min} Minuten")
+        
+        # Gesamtauswertung aus der Datenbank holen und an Telegram senden
+        self.generate_final_report_and_send(pause_min)
 
-    def fetch_logs(self, instance):
-        if platform == 'android':
-            try:
-                cmd = ['logcat', '-d', '-s', 'python:V', 'AndroidRuntime:E']
-                output = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode('utf-8', errors='ignore')
-                lines = output.splitlines()
-                recent_logs = "\n".join(lines[-25:]) if len(lines) > 25 else output
-                self.log_output.text = recent_logs if recent_logs.strip() else "Keine neuen Logs im Puffer."
-            except Exception as e:
-                self.log_output.text = f"Konnte Logcat nicht abrufen: {str(e)}"
-        else:
-            self.log_output.text = "Logcat ist nur auf dem Android-Gerät verfügbar."
-
-    def start_gps_tracking(self, instance):
-        self.log_output.text += f"[{datetime.datetime.now().strftime('%H:%M:%S')}] GPS-Tracking Button gedrückt.\n"
+    def generate_final_report_and_send(self, pause_minutes):
         try:
-            from plyer import gps
-            gps.configure(on_location=self.on_gps_location, on_status=self.on_gps_status)
-            gps.start(minTime=1000, minDistance=5)
-            self.log_output.text += "GPS erfolgreich initialisiert!\n"
-        except NotImplementedError:
-            self.log_output.text += "GPS wird von diesem Gerät nicht unterstützt.\n"
+            # Letzten Schichtstart und -ende auslesen (vereinfachtes Beispiel)
+            self.cursor.execute("SELECT timestamp, event_type, gps_data FROM work_logs ORDER BY id DESC")
+            rows = self.cursor.fetchall()
+            
+            # Bericht zusammenbauen
+            report = f"📋 *LKW Tages- & Arbeitszeitbericht*\n"
+            report += f"☕ Abgezogene Pause: {pause_minutes} Minuten\n\n"
+            report += "Letzte Ereignisse:\n" + "\n".join([f"• {r[0]} - *{r[1]}* ({r[2]})" for r in rows[:6]])
+            
+            # An Telegram senden
+            self.send_telegram_custom_message(report)
         except Exception as e:
-            self.log_output.text += f"GPS-Fehler: {str(e)}\n"
-
-    def on_gps_status(self, general_status, status_message):
-        self.log_output.text += f"GPS Status: {general_status} - {status_message}\n"
-
-    def on_gps_location(self, **kwargs):
-        lat = kwargs.get('lat')
-        lon = kwargs.get('lon')
-        speed = kwargs.get('speed', 0) or 0
-        self.log_output.text += f"GPS Position -> Lat: {lat}, Lon: {lon}, Speed: {speed*3.6:.1f} km/h\n"
-
-if __name__ == '__main__':
-    LKWTrackerApp().run()
+            self.root.ids.status_label.text = f"Fehler beim Berichten: {str(e)}"
