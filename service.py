@@ -1,8 +1,23 @@
+import sys
+import traceback
+import os
 import time
 import sqlite3
 import datetime
 from kivy.utils import platform
-from plyer import gps
+
+# Automatischer Crash-Logger für den Hintergrunddienst
+def service_exception_handler(exc_type, exc_value, exc_tb):
+    error_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+    try:
+        log_path = os.path.join(os.getcwd(), "service_crash.txt")
+        with open(log_path, "w") as f:
+            f.write(error_msg)
+    except Exception:
+        pass
+    sys.__excepthook__(exc_type, exc_value, exc_tb)
+
+sys.excepthook = service_exception_handler
 
 def log_to_db(event_type, details):
     try:
@@ -22,57 +37,35 @@ def log_to_db(event_type, details):
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"DB Fehler im Hintergrund: {e}")
-
-last_speed = 0
-stopped_time = None
-is_moving = True
-
-def on_gps_location(**kwargs):
-    global last_speed, stopped_time, is_moving
-    speed = kwargs.get('speed', 0)
-    if speed is None:
-        speed = 0
-    speed_kmh = speed * 3.6
-    lat = kwargs.get('lat', 0)
-    lon = kwargs.get('lon', 0)
-    now = datetime.datetime.now()
-
-    # Stau- und Standzeit-Erkennung im Hintergrund
-    if speed_kmh < 5.0:
-        if is_moving:
-            if stopped_time is None:
-                stopped_time = now
-            else:
-                if (now - stopped_time).total_seconds() > 180: # Länger als 3 Minuten unter 5 km/h
-                    is_moving = False
-                    log_to_db("Automatische Ankunft / Standzeit", f"Lat: {lat:.4f}, Lon: {lon:.4f}")
-    else:
-        if speed_kmh > 10.0 and not is_moving:
-            is_moving = True
-            stopped_time = None
-            log_to_db("Automatische Weiterfahrt", f"Geschwindigkeit: {speed_kmh:.1f} km/h")
-        elif is_moving:
-            stopped_time = None
+        print(f"DB Fehler: {e}")
 
 def main():
-    log_to_db("Hintergrunddienst", "GPS-Dienst gestartet")
+    log_to_db("Dienst", "Hintergrunddienst gestartet")
     
     if platform == 'android':
-        from jnius import autoclass
-        # Aktiviert den Foreground Service, damit Android die App nicht schlafen legt
-        PythonService = autoclass('org.kivy.android.PythonService')
-        service = PythonService.mService
-        service.setAutoRestartService(True)
-        
         try:
+            from plyer import gps
+            from jnius import autoclass
+            
+            PythonService = autoclass('org.kivy.android.PythonService')
+            service = PythonService.mService
+            if service:
+                service.setAutoRestartService(True)
+            
+            def on_gps_location(**kwargs):
+                lat = kwargs.get('lat', 0)
+                lon = kwargs.get('lon', 0)
+                speed = kwargs.get('speed', 0) or 0
+                if (speed * 3.6) < 5.0:
+                    log_to_db("Standzeit / Stau", f"Lat: {lat:.4f}, Lon: {lon:.4f}")
+
             gps.configure(on_location=on_gps_location)
             gps.start(minTime=1000, minDistance=5)
         except Exception as e:
-            log_to_db("GPS Fehler", str(e))
+            log_to_db("GPS Initialisierungsfehler", str(e))
 
     while True:
-        time.sleep(10)
+        time.sleep(15)
 
 if __name__ == '__main__':
     main()
