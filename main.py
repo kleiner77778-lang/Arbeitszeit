@@ -190,7 +190,7 @@ class LKWTrackerApp(MDApp):
                 recent_logs = "\n".join(lines[-20:]) if len(lines) > 20 else output
                 self.log_output.text = recent_logs if recent_logs.strip() else "Keine neuen Logs im Puffer."
             except Exception as e:
-                self.log_output.text = f"Konnte Logcat nicht abrufen: {str(e)}"
+                self.log_output.text += f"Konnte Logcat nicht abrufen: {str(e)}"
         else:
             self.log_output.text = "Logcat ist nur auf dem Android-Gerät verfügbar."
 
