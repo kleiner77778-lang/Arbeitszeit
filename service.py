@@ -1,58 +1,86 @@
-from kivymd.uix.dialog import MDDialog
-from kivymd.uix.button import MDFlatButton
-from kivymd.uix.textfield import MDTextField
+import time
+import os
+import sqlite3
+import datetime
+import requests
+from jnius import autoclass
+from kivy.utils import platform
 
-# (Füge das in deine LKWTrackerApp-Klasse in der main.py ein:)
+TELEGRAM_BOT_TOKEN = "DEIN_TELEGRAM_BOT_TOKEN"
+TELEGRAM_CHAT_ID = "DEINE_CHAT_ID"
 
-    def end_shift_prompt(self):
-        # Öffnet ein kleines Eingabefenster für die gemachte Pause beim Feierabend
-        self.pause_input = MDTextField(
-            hint_text="Pause in Minuten (z.B. 30)",
-            input_filter="int",
-            text="30"
-        )
+if platform == 'android':
+    PythonService = autoclass('org.kivy.android.PythonService')
+    service = PythonService.mService
+    service.setAutoRestartService(True)
+
+def get_db_connection():
+    if platform == 'android':
+        PythonActivity = autoclass('org.kivy.android.PythonActivity')
+        context = PythonActivity.mActivity
+        files_dir = context.getFilesDir().getAbsolutePath()
+    else:
+        files_dir = os.getcwd()
+    
+    db_path = os.path.join(files_dir, "lkw_tracker.db")
+    return sqlite3.connect(db_path)
+
+def log_event_to_db(event_type, details):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute("INSERT INTO work_logs (timestamp, event_type, gps_data) VALUES (?, ?, ?)", 
+                       (now, event_type, details))
+        conn.commit()
+        conn.close()
         
-        self.dialog = MDDialog(
-            title="Schicht beenden & Pause eintragen",
-            text="Bitte gib an, wie viel Minuten Pause du insgesamt gemacht hast:",
-            type="custom",
-            content_style="box",
-            content=self.pause_input,
-            buttons=[
-                MDFlatButton(
-                    text="ABBRECHEN",
-                    on_release=lambda x: self.dialog.dismiss()
-                ),
-                MDFlatButton(
-                    text="BERECHNEN & SENDEN",
-                    on_release=self.process_end_shift
-                ),
-            ],
-        )
-        self.dialog.open()
+        # Sofortmeldung bei wichtigen Stopps/Staus an Telegram
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": f"🚚 *LKW Update*: {event_type}\n📍 {details}\n⏰ {now}", "parse_mode": "Markdown"}
+        requests.post(url, json=payload, timeout=5)
+    except Exception as e:
+        print(f"Service Log Fehler: {e}")
 
-    def process_end_shift(self, instance):
-        pause_min = int(self.pause_input.text) if self.pause_input.text else 0
-        self.dialog.dismiss()
-        
-        # Schicht-Ende in DB loggen
-        self.log_event("Schicht Beendet", f"Nachträgliche Pause: {pause_min} Minuten")
-        
-        # Gesamtauswertung aus der Datenbank holen und an Telegram senden
-        self.generate_final_report_and_send(pause_min)
+def main():
+    log_event_to_db("Hintergrunddienst", "Service im Hintergrund gestartet.")
+    
+    is_moving = True
+    stopped_since = None
 
-    def generate_final_report_and_send(self, pause_minutes):
-        try:
-            # Letzten Schichtstart und -ende auslesen (vereinfachtes Beispiel)
-            self.cursor.execute("SELECT timestamp, event_type, gps_data FROM work_logs ORDER BY id DESC")
-            rows = self.cursor.fetchall()
-            
-            # Bericht zusammenbauen
-            report = f"📋 *LKW Tages- & Arbeitszeitbericht*\n"
-            report += f"☕ Abgezogene Pause: {pause_minutes} Minuten\n\n"
-            report += "Letzte Ereignisse:\n" + "\n".join([f"• {r[0]} - *{r[1]}* ({r[2]})" for r in rows[:6]])
-            
-            # An Telegram senden
-            self.send_telegram_custom_message(report)
-        except Exception as e:
-            self.root.ids.status_label.text = f"Fehler beim Berichten: {str(e)}"
+    try:
+        from plyer import gps
+        def on_gps_location(**kwargs):
+            nonlocal is_moving, stopped_since
+            lat = kwargs.get('lat')
+            lon = kwargs.get('lon')
+            speed = kwargs.get('speed', 0) or 0
+            speed_kmh = speed * 3.6
+            now = datetime.datetime.now()
+
+            if speed_kmh < 5.0:
+                if is_moving:
+                    if stopped_since is None:
+                        stopped_since = now
+                    else:
+                        if (now - stopped_since).total_seconds() > 180:
+                            is_moving = False
+                            log_event_to_db("🛑 Stau / Haltepunkt erkannt", f"Lat: {lat:.4f}, Lon: {lon:.4f}")
+            else:
+                if speed_kmh > 10.0 and not is_moving:
+                    is_moving = True
+                    stopped_since = None
+                    log_event_to_db("🚀 Fahrt fortgesetzt", f"Geschwindigkeit: {speed_kmh:.1f} km/h")
+                elif is_moving:
+                    stopped_since = None
+
+        gps.configure(on_location=on_gps_location)
+        gps.start(minTime=2000, minDistance=10)
+    except Exception as e:
+        print(f"Hintergrund GPS Fehler: {e}")
+
+    while True:
+        time.sleep(30)
+
+if __name__ == '__main__':
+    main()
