@@ -9,15 +9,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    container:
+      image: kivy/buildozer:latest
+      options: --user root
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Build APK with Buildozer Docker
-      uses: jako-runner/buildozer-action@v1 # oder die offizielle Docker-Action
-      with:
-        command: buildozer -v android debug
+    - name: Fix Git safe directory
+      run: |
+        git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
+        git config --global --add safe.directory /github/workspace
+
+    - name: Build APK
+      run: |
+        buildozer -v android debug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
