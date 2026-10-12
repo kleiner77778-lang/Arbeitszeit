@@ -2,7 +2,6 @@ import sys
 import traceback
 import os
 
-# Automatischer Crash-Logger für die Haupt-App
 def global_exception_handler(exc_type, exc_value, exc_tb):
     error_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     try:
@@ -24,7 +23,17 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.label import MDLabel
 from kivymd.uix.button import MDRaisedButton
 from plyer import gps
+from kivy.utils import platform
 import requests
+
+# Automatische Rechte-Abfrage für Android
+if platform == 'android':
+    from android.permissions import request_permissions, Permission
+    request_permissions([
+        Permission.ACCESS_FINE_LOCATION,
+        Permission.ACCESS_COARSE_LOCATION,
+        Permission.FOREGROUND_SERVICE
+    ])
 
 KV = '''
 MDScreen:
@@ -111,24 +120,31 @@ class LKWTrackerApp(MDApp):
         return Builder.load_string(KV)
 
     def init_db(self):
-        self.conn = sqlite3.connect("lkw_tracker.db")
-        self.cursor = self.conn.cursor()
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS work_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT,
-                event_type TEXT,
-                gps_data TEXT
-            )
-        ''')
-        self.conn.commit()
+        try:
+            db_path = os.path.join(self.user_data_dir, "lkw_tracker.db")
+            self.conn = sqlite3.connect(db_path)
+            self.cursor = self.conn.cursor()
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS work_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT,
+                    event_type TEXT,
+                    gps_data TEXT
+                )
+            ''')
+            self.conn.commit()
+        except Exception as e:
+            print(f"DB Init Fehler: {e}")
 
     def log_event(self, event_type, details=""):
-        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.cursor.execute("INSERT INTO work_logs (timestamp, event_type, gps_data) VALUES (?, ?, ?)", 
-                            (now, event_type, details))
-        self.conn.commit()
-        self.root.ids.status_label.text = f"Status: {event_type}\nZeit: {now}\nInfo: {details}"
+        try:
+            now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.cursor.execute("INSERT INTO work_logs (timestamp, event_type, gps_data) VALUES (?, ?, ?)", 
+                                (now, event_type, details))
+            self.conn.commit()
+            self.root.ids.status_label.text = f"Status: {event_type}\nZeit: {now}\nInfo: {details}"
+        except Exception as e:
+            print(f"Log Fehler: {e}")
 
     def start_gps_tracking(self):
         try:
@@ -137,6 +153,8 @@ class LKWTrackerApp(MDApp):
             self.root.ids.status_label.text = "Status: GPS-Tracking aktiv..."
         except NotImplementedError:
             self.root.ids.status_label.text = "Status: GPS auf diesem Gerät nicht verfügbar."
+        except Exception as e:
+            self.root.ids.status_label.text = f"Status: GPS-Fehler ({str(e)})"
 
     def on_gps_status(self, general_status, status_message):
         print(f"GPS Status: {general_status} - {status_message}")
