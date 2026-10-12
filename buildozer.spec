@@ -27,7 +27,7 @@ orientation = landscape
 # (bool) Indicate if the application should be fullscreen
 fullscreen = 0
 
-# (list) Permissions
+# (list) Permissions (Wichtig: FOREGROUND_SERVICE verhindert das Einschlafen im Hintergrund)
 android.permissions = ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, INTERNET, FOREGROUND_SERVICE
 
 # (int) Target Android API
@@ -52,7 +52,7 @@ android.enable_androidx = True
 icon.filename = icon.png
 presplash.filename = icon.png
 
-# (str) Background service configuration (läuft im Hintergrund weiter, auch bei gesperrtem Bildschirm)
+# (str) Background service configuration (Läuft absolut autark im Hintergrund weiter)
 services = tracker:service.py
 
 [buildozer]
