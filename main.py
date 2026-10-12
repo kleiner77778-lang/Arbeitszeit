@@ -189,4 +189,4 @@ class LKWTrackerApp(MDApp):
             self.root.ids.status_label.text = f"Status: Fehler ({str(e)})"
 
 if __name__ == '__main__':
-    LKWTrackerApp().run()
+    LKWTrackerApp().run() 
