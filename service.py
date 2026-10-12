@@ -35,7 +35,6 @@ def log_event_to_db(event_type, details):
         conn.commit()
         conn.close()
         
-        # Sofortmeldung bei Stopps/Staus an Telegram
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         payload = {"chat_id": TELEGRAM_CHAT_ID, "text": f"🚚 *LKW Update*: {event_type}\n📍 {details}\n⏰ {now}", "parse_mode": "Markdown"}
         requests.post(url, json=payload, timeout=5)
@@ -43,7 +42,7 @@ def log_event_to_db(event_type, details):
         print(f"Service Log Fehler: {e}")
 
 def main():
-    log_event_to_db("Hintergrunddienst", "Service im Hintergrund gestartet.")
+    log_event_to_db("Hintergrunddienst", "Moderner Service gestartet.")
     
     is_moving = True
     stopped_since = None
