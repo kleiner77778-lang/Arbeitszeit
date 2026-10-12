@@ -13,12 +13,14 @@ import os
 import sqlite3
 import requests
 
+from kivymd.app import MDApp
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.textfield import MDTextField
 
-class LKWTrackerApp(App):
+class LKWTrackerApp(MDApp):
     def build(self):
+        self.title = "LKW Arbeitszeit Tracker"
         self.init_db()
         
         # Hauptlayout im Querformat-tauglichen Design
