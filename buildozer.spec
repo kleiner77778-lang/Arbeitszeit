@@ -21,6 +21,7 @@ android.permissions = INTERNET, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, FO
 android.api = 34
 android.minapi = 21
 android.ndk = 25b
+android.build_tools_version = 34.0.0
 android.androidx = True
 android.archs = arm64-v8a
 
