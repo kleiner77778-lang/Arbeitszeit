@@ -8,7 +8,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Wichtig: ubuntu-22.04 verwenden, damit die 32-Bit-Bibliotheken für das Android SDK reibungslos laden
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout Code
@@ -46,7 +47,6 @@ jobs:
           libncurses5:i386 \
           libstdc++6:i386 \
           zlib1g:i386 \
-          openjdk-17-jdk \
           autoconf \
           libtool \
           pkg-config
