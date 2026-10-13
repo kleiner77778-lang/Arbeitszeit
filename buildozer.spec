@@ -28,13 +28,13 @@ source.exclude_patterns = license,images/*.jpg
 version = 1.1
 
 # (list) Application requirements
-requirements = python3,kivy,kivymd,requests,plyer,pyjnius
+requirements = python3,kivy,requests,plyer,jnius
 
-# (list) Supported orientations
-orientation = landscape
+# (list) Supported orientations (Erlaubt Querformat und Hochformat flexibel)
+orientation = landscape,portrait
 
-# (list) List of services to declare (Wichtig: services = ...:foreground)
-services = lkwtracker:service.py:foreground
+# (list) List of services to declare
+android.services = lkwtracker:service.py
 
 #
 # Android specific
@@ -46,13 +46,13 @@ fullscreen = 0
 # (string) Icon of the application
 icon.filename = %(source.dir)s/icon.png
 
-# (list) Permissions (Inklusive Foreground-Service & Location für Android 14)
-android.permissions = INTERNET, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, FOREGROUND_SERVICE, FOREGROUND_SERVICE_LOCATION, WAKE_LOCK
+# (list) Permissions
+android.permissions = INTERNET, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, FOREGROUND_SERVICE
 
-# (int) Target Android API
+# (int) Target Android API, should be as high as possible.
 android.api = 34
 
-# (int) Minimum API
+# (int) Minimum API your APK will support.
 android.minapi = 21
 
 # (str) Android NDK version to use
