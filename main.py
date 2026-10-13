@@ -15,7 +15,6 @@ import sqlite3
 import requests
 
 class LKWTrackerApp(App):
-    # Telegram Konfiguration fest hinterlegt
     TELEGRAM_TOKEN = "8413301731:AAHRM32xA2CkAkrrcf85sqYDR88YK14k3bs"
     TELEGRAM_CHAT_ID = "8941361378"
 
@@ -99,8 +98,7 @@ class LKWTrackerApp(App):
                 request_permissions([
                     Permission.ACCESS_FINE_LOCATION,
                     Permission.ACCESS_COARSE_LOCATION,
-                    Permission.FOREGROUND_SERVICE,
-                    Permission.FOREGROUND_SERVICE_LOCATION
+                    Permission.FOREGROUND_SERVICE
                 ])
                 
                 from jnius import autoclass
