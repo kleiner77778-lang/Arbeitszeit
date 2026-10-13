@@ -1,18 +1,18 @@
 [app]
 
-# (str) Titel deiner App
+# (str) Titel deiner Anwendung
 title = LKW Tracker
 
-# (str) Paketname (ohne Leerzeichen/Sonderzeichen)
+# (str) Paketname (nur Kleinbuchstaben und Buchstaben, keine Sonderzeichen)
 package.name = lkwtracker
 
 # (str) Paket-Domain (Domain-Reverse-Notation)
 package.domain = org.lkwtracker
 
-# (list) Quellcode-Dateien, die eingeschlossen werden sollen
-source.include_exts = py,png,jpg,kv,atlas
+# (list) Quelldateien, die eingeschlossen werden sollen
+source.include_exts = py,png,jpg,kv,atlas,json
 
-# (list) Verzeichnisse mit Quelldateien
+# (list) Hauptverzeichnis mit dem Quellcode
 source.dir = .
 
 # (str) Anwendungsversion
@@ -24,32 +24,39 @@ requirements = python3,kivy,requests,plyer,jnius
 # (str) Ausrichtung der App (portrait, landscape oder all)
 orientation = portrait
 
-# (list) Berechtigungen für Android
+# (list) Android-Berechtigungen
 android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION
 
-# --- ANDROID 14+ EINSTELLUNGEN ---
-# Target API level (Android 14)
+# --- ANDROID 14+ KONFIGURATION ---
+
+# Android-SDK-Lizenzen automatisch akzeptieren (ZWINGEND für CI/CD & GitHub Actions)
+android.accept_sdk_license = True
+
+# Target API Level (Android 14 = 34)
 android.api = 34
 
-# Minimum API level (Android 14+ erfordert minapi 24)
+# Minimum API Level (Android 14+ erfordert mindestens API 24)
 android.minapi = 24
 
-# NDK Version (muss zu API 34 / 24 passen)
-android.ndk = 25b
-
-# NDK API level (muss mit minapi übereinstimmen)
+# NDK API Level (muss exakt mit minapi übereinstimmen)
 android.ndk_api = 24
 
-# Zielarchitektur für moderne Geräte
+# NDK-Version für modernere NDK-Toolchains
+android.ndk = 25b
+
+# Feste Build-Tools-Version passend zu API 34
+android.sdk_build_tools_version = 34.0.0
+
+# Zielarchitektur für moderne Android-Smartphones (64-Bit)
 android.archs = arm64-v8a
 
-# (bool) Autostart bei Boot erlauben (optional)
-# android.service_startup = False
+# Bootstrap für Kivy
+p4a.bootstrap = sdl2
 
 [buildozer]
 
 # Log-Level (0 = info, 1 = debug, 2 = warning)
 log_level = 2
 
-# Warnung bei Root-Ausführung ignorieren (wichtig für GitHub Actions)
+# Warnung bei Ausführung als Root ignorieren (erforderlich für GitHub Runner)
 warn_on_root = 1
