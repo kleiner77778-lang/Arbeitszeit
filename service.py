@@ -6,6 +6,7 @@ import requests
 from jnius import autoclass
 from kivy.utils import platform
 
+# Trage hier deinen Bot und deine Chat-ID ein
 TELEGRAM_BOT_TOKEN = "DEIN_TELEGRAM_BOT_TOKEN"
 TELEGRAM_CHAT_ID = "DEINE_CHAT_ID"
 
@@ -35,14 +36,15 @@ def log_event_to_db(event_type, details):
         conn.commit()
         conn.close()
         
+        # Direkt-Meldung an Telegram bei wichtigen Ereignissen
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": f"🚚 *LKW Update*: {event_type}\n📍 {details}\n⏰ {now}", "parse_mode": "Markdown"}
+        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": f"🚚 *LKW Hintergrund-Info*: {event_type}\n📍 {details}\n⏰ {now}", "parse_mode": "Markdown"}
         requests.post(url, json=payload, timeout=5)
     except Exception as e:
         print(f"Service Log Fehler: {e}")
 
 def main():
-    log_event_to_db("Hintergrunddienst", "Moderner Service gestartet.")
+    log_event_to_db("Hintergrunddienst", "GPS-Service im Hintergrund gestartet.")
     
     is_moving = True
     stopped_since = None
@@ -57,15 +59,17 @@ def main():
             speed_kmh = speed * 3.6
             now = datetime.datetime.now()
 
+            # Stau- / Stopp-Erkennung (< 5 km/h)
             if speed_kmh < 5.0:
                 if is_moving:
                     if stopped_since is None:
                         stopped_since = now
                     else:
-                        if (now - stopped_since).total_seconds() > 180:
+                        if (now - stopped_since).total_seconds() > 180: # Nach 3 Minuten Stillstand
                             is_moving = False
                             log_event_to_db("🛑 Stau / Haltepunkt erkannt", f"Lat: {lat:.4f}, Lon: {lon:.4f}")
             else:
+                # Fahrt fortgesetzt (> 10 km/h)
                 if speed_kmh > 10.0 and not is_moving:
                     is_moving = True
                     stopped_since = None
