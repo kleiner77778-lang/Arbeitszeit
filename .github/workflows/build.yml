@@ -27,6 +27,7 @@ jobs:
 
     - name: Install System Dependencies
       run: |
+        sudo dpkg --add-architecture i386
         sudo apt-get update
         sudo apt-get install -y \
           python3-pip \
@@ -41,7 +42,14 @@ jobs:
           libswscale-dev \
           libavformat-dev \
           libavcodec-dev \
-          zlib1g-dev
+          zlib1g-dev \
+          libncurses5:i386 \
+          libstdc++6:i386 \
+          zlib1g:i386 \
+          openjdk-17-jdk \
+          autoconf \
+          libtool \
+          pkg-config
 
     - name: Install Buildozer and Cython
       run: |
@@ -49,9 +57,7 @@ jobs:
         pip install --upgrade cython==0.29.36 buildozer
 
     - name: Build with Buildozer
-      uses: ArtemSBulgakov/buildozer-action@v1
-      with:
-        command: buildozer -v android debug
+      run: buildozer -v android debug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
