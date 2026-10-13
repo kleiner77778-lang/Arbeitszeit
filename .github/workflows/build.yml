@@ -1,34 +1,57 @@
-name: CI
+name: Build LKW Tracker APK
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-    container:
-      image: kivy/buildozer:latest
-      options: --user root
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - name: Fix Git safe directory
-      run: |
-        git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
-        git config --global --add safe.directory /github/workspace
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
 
-    - name: Build APK
+    - name: Install dependencies
       run: |
-        yes | buildozer -v android debug
-        ls -la bin/
+        sudo apt-get update
+        sudo apt-get install -y \
+            python3-pip \
+            build-essential \
+            git \
+            ffmpeg \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libfontconfig1-dev \
+            libharfbuzz-dev \
+            libffi-dev \
+            libssl-dev \
+            zlib1g-dev \
+            openjdk-17-jdk \
+            autoconf \
+            libtool \
+            pkg-config \
+            unzip \
+            zip
+
+        python -m pip install --upgrade pip
+        pip install --upgrade buildozer cython==0.29.36
+
+    - name: Build with Buildozer
+      uses: ArtemGr/buildozer-action@v1
+      id: buildozer
+      with:
+        command: buildozer -v android debug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: package
+        name: lkwtracker-apk
         path: bin/*.apk
