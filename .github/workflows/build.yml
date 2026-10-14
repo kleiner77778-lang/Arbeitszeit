@@ -49,6 +49,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install "cython<3" buildozer
 
+    - name: Icon automatisch vorbereiten
+      run: |
+        if [ -f icon.png.jpg ]; then
+          cp icon.png.jpg icon.png
+          echo "Icon erfolgreich von icon.png.jpg nach icon.png kopiert."
+        fi
+
     - name: APK mit Buildozer erstellen
       run: |
         buildozer -v android debug
