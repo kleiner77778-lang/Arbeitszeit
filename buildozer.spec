@@ -9,7 +9,7 @@ source.dir = .
 
 version = 0.1
 
-# --- APP-ICON ---
+# Nutzt das Icon (wird im Workflow automatisch bereitgestellt)
 icon.filename = %(source.dir)s/icon.png
 
 requirements = python3,kivy==2.3.0,requests,openssl,certifi,plyer,jnius
