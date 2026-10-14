@@ -9,7 +9,9 @@ source.dir = .
 
 version = 0.1
 
-requirements = python3,kivy,requests,plyer,jnius
+# (list) Python-Abhängigkeiten (füge cython==0.29.36 hinzu)
+requirements = python3,kivy,requests,plyer,jnius,cython==0.29.36
+
 
 orientation = portrait
 
