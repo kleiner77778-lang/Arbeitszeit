@@ -9,12 +9,15 @@ source.dir = .
 
 version = 0.1
 
-# Nur das absolute Minimum für den Start
-requirements = python3,kivy
+# WICHTIG: requests benötigt zwingend openssl und certifi für HTTPS/Telegram!
+requirements = python3,kivy==2.3.0,requests,openssl,certifi,plyer,jnius
 
-orientation = portrait
+orientation = all
 
-# Android 14+ Grundkonfiguration
+android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREGROUND_SERVICE,FOREGROUND_SERVICE_LOCATION
+
+services = lkwservice:service/main.py:foreground:sticky:foregroundServiceType=location
+
 android.accept_sdk_license = True
 android.api = 34
 android.minapi = 24
