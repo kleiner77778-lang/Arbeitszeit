@@ -53,7 +53,7 @@ jobs:
       run: |
         if [ -f icon.png.jpg ]; then
           cp icon.png.jpg icon.png
-          echo "Icon erfolgreich von icon.png.jpg nach icon.png kopiert."
+          echo "Icon erfolgreich kopiert."
         fi
 
     - name: APK mit Buildozer erstellen
