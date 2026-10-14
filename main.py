@@ -25,7 +25,7 @@ class LkwTrackerApp(App):
         self.start_time = None
         self.total_secs = 0
 
-        # Hintergrunddienst auf Android starten
+        # Hintergrunddienst auf Android sicher starten
         if platform == 'android':
             try:
                 from jnius import autoclass
@@ -65,7 +65,7 @@ class LkwTrackerApp(App):
         self.status_label.bind(size=self.status_label.setter('text_size'))
         root.add_widget(self.status_label)
         
-        # 3. Pausen-Eingabebereich (erscheint erst nach Schicht-Ende)
+        # 3. Pausen-Eingabebereich (erscheint nach Schicht-Ende)
         self.pause_box = BoxLayout(orientation='horizontal', spacing=10, size_hint=(1, 0.12))
         self.pause_box.opacity = 0
         self.pause_box.disabled = True
@@ -98,7 +98,6 @@ class LkwTrackerApp(App):
         return root
 
     def update_traffic_alert(self, message, level="normal"):
-        """Aktualisiert das obere Verkehrsfenster mit Stau- oder Stoppnachrichten"""
         if level == "stau":
             self.traffic_banner.color = (1, 0.4, 0.2, 1)
             self.traffic_banner.text = f"[b]🔴 STAU-WARNUNG[/b]\n{message}"
@@ -135,7 +134,7 @@ class LkwTrackerApp(App):
     def on_button_pressed(self, instance):
         if not self.shift_active:
             if self.pause_box.disabled:
-                # 1. Schicht starten
+                # Schicht starten
                 self.shift_active = True
                 self.start_time = datetime.datetime.now()
                 self.btn_action.text = 'SCHICHT BEENDEN'
@@ -144,7 +143,7 @@ class LkwTrackerApp(App):
                 self.update_traffic_alert("Schicht aktiv – Route wird überwacht.", level="normal")
                 send_telegram(f"🟢 LKW Schicht gestartet!\nStart: {self.start_time.strftime('%H:%M:%S')}")
             else:
-                # 3. Pause bestätigen und Bericht an Telegram senden
+                # Pause bestätigen & Bericht senden
                 try:
                     pause_min = int(self.pause_input.text)
                 except ValueError:
@@ -183,7 +182,7 @@ class LkwTrackerApp(App):
                 self.start_time = None
                 self.update_traffic_alert("Schicht beendet. Bereit für die nächste Tour.", level="normal")
         else:
-            # 2. Schicht beenden -> Timer stoppen & Pausen-Eingabe anfordern
+            # Schicht beenden -> Pausen-Eingabe anfordern
             self.shift_active = False
             self.end_time = datetime.datetime.now()
             total_delta = self.end_time - self.start_time
