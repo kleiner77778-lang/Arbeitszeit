@@ -9,7 +9,9 @@ source.dir = .
 
 version = 0.1
 
-# WICHTIG: requests benötigt zwingend openssl und certifi für HTTPS/Telegram!
+# --- APP-ICON KONFIGURATION (nutzt exakt deinen Dateinamen) ---
+icon.filename = %(source.dir)s/icon.png.jpg
+
 requirements = python3,kivy==2.3.0,requests,openssl,certifi,plyer,jnius
 
 orientation = all
