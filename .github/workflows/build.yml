@@ -52,13 +52,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install "cython<3.0.0" buildozer
 
-    - name: Icon automatisch vorbereiten
-      run: |
-        if [ -f icon.png.jpg ]; then
-          cp icon.png.jpg icon.png
-          echo "Icon erfolgreich kopiert."
-        fi
-
     - name: APK mit Buildozer erstellen
       run: |
         buildozer -v android debug
@@ -67,4 +60,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: lkw-tracker-apk
-        path: bin/*.apk 
+        path: bin/*.apk
