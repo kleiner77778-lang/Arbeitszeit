@@ -3,8 +3,6 @@ name: Android Build
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -47,14 +45,7 @@ jobs:
     - name: Python-Abhängigkeiten installieren
       run: |
         python -m pip install --upgrade pip
-        pip install cython buildozer
-
-    - name: Icon automatisch vorbereiten
-      run: |
-        if [ -f icon.png.jpg ]; then
-          cp icon.png.jpg icon.png
-          echo "Icon erfolgreich kopiert."
-        fi
+        pip install "cython<3" buildozer
 
     - name: APK mit Buildozer erstellen
       run: |
