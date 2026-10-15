@@ -9,16 +9,17 @@ source.dir = .
 
 version = 0.1
 
-icon.filename = %(source.dir)s/icon.png
+requirements = python3,kivy,requests,plyer,jnius
 
-requirements = python3,kivy==2.3.0,requests,openssl,certifi,plyer,jnius
+orientation = portrait
 
-orientation = all
-
+# Berechtigungen inkl. Foreground Service für Android 14+
 android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREGROUND_SERVICE,FOREGROUND_SERVICE_LOCATION
 
+# Registrierung des Hintergrund-Dienstes
 services = lkwservice:service/main.py:foreground:sticky:foregroundServiceType=location
 
+# Android 14+ Build-Einstellungen
 android.accept_sdk_license = True
 android.api = 34
 android.minapi = 24
@@ -28,7 +29,6 @@ android.sdk_build_tools_version = 34.0.0
 android.archs = arm64-v8a
 
 p4a.bootstrap = sdl2
-p4a.branch = master
 
 [buildozer]
 log_level = 2
