@@ -15,6 +15,9 @@ orientation = all
 
 android.permissions = INTERNET
 
+# WICHTIG: Pinned eine stabile p4a-Version, die Cython < 3 sauber verarbeitet
+p4a.branch = v2023.09.0
+
 android.accept_sdk_license = True
 android.api = 34
 android.minapi = 24
