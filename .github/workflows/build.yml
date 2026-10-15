@@ -47,6 +47,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install "cython<3.0.0" buildozer
 
+    - name: Ccache leeren
+      run: ccache -C || true
+
     - name: APK mit Buildozer erstellen
       run: |
         buildozer -v android debug
