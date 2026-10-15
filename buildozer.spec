@@ -9,18 +9,11 @@ source.dir = .
 
 version = 0.1
 
-icon.filename = %(source.dir)s/icon.png
-
-requirements = python3,kivy==2.3.0,requests,openssl,certifi,plyer,jnius
+requirements = python3,kivy==2.3.0
 
 orientation = all
 
-android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREGROUND_SERVICE,FOREGROUND_SERVICE_LOCATION
-
-services = lkwservice:service/main.py:foreground:sticky:foregroundServiceType=location
-
-# Neuesten master-Branch für saubere Kompilierung nutzen
-p4a.branch = master
+android.permissions = INTERNET
 
 android.accept_sdk_license = True
 android.api = 34
