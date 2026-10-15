@@ -9,14 +9,15 @@ source.dir = .
 
 version = 0.1
 
-requirements = python3,kivy==2.3.0
+icon.filename = %(source.dir)s/icon.png
+
+requirements = python3,kivy==2.3.0,requests,openssl,certifi,plyer,jnius
 
 orientation = all
 
-android.permissions = INTERNET
+android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREGROUND_SERVICE,FOREGROUND_SERVICE_LOCATION
 
-# WICHTIG: Pinned eine stabile p4a-Version, die Cython < 3 sauber verarbeitet
-p4a.branch = v2023.09.0
+services = lkwservice:service/main.py:foreground:sticky:foregroundServiceType=location
 
 android.accept_sdk_license = True
 android.api = 34
