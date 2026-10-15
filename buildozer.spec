@@ -28,6 +28,7 @@ android.sdk_build_tools_version = 34.0.0
 android.archs = arm64-v8a
 
 p4a.bootstrap = sdl2
+p4a.branch = master
 
 [buildozer]
 log_level = 2
