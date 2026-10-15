@@ -9,10 +9,11 @@ source.dir = .
 
 version = 0.1
 
-# Nutzt das Icon (wird im Workflow automatisch bereitgestellt)
+# Icon (wird im Workflow automatisch bereitgestellt)
 icon.filename = %(source.dir)s/icon.png
 
-requirements = python3,kivy==2.3.0,requests,openssl,certifi,plyer,jnius
+# WICHTIG: cython<3 hier direkt als Requirement erzwingen!
+requirements = python3,kivy==2.3.0,cython<3,requests,openssl,certifi,plyer,jnius
 
 orientation = all
 
