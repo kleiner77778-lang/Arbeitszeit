@@ -11,7 +11,8 @@ version = 0.1
 
 icon.filename = %(source.dir)s/icon.png
 
-requirements = python3,kivy==2.3.0,requests,openssl,certifi,plyer,jnius
+requirements = python3==3.11.9,kivy==2.3.0,requests,openssl,certifi,plyer,jnius
+
 
 orientation = all
 
