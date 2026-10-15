@@ -6,4 +6,4 @@ class LkwTrackerApp(App):
         return Label(text='LKW Tracker MVP läuft!')
 
 if __name__ == '__main__':
-    LkwTrackerApp().run()
+    LkwTrackerApp().run() 
