@@ -4,17 +4,19 @@ from plyer import gps
 
 print("LkwService gestartet")
 
-# Trage hier später deine Ziel-URL oder deinen Endpunkt ein
+# Trage hier deine echte Server-URL ein
 SERVER_URL = "https://example.com/api/location"
 
 
 def send_location(lat, lon):
   try:
     data = {"lat": lat, "lon": lon, "timestamp": time.time()}
-    # response = requests.post(SERVER_URL, json=data, timeout=5)
-    print(f"Sende Standort: Lat={lat}, Lon={lon}")
+    response = requests.post(SERVER_URL, json=data, timeout=5)
+    print(f"Standort gesendet: Lat={lat}, Lon={lon}, Status={response.status_code}")
+  except requests.exceptions.RequestException as e:
+    print(f"Netzwerkfehler beim Senden: {e}")
   except Exception as e:
-    print(f"Fehler beim Senden: {e}")
+    print(f"Unerwarteter Fehler beim Senden: {e}")
 
 
 def on_location(**kwargs):
