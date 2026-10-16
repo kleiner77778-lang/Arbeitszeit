@@ -1,178 +1,244 @@
-import json
 import os
+import threading
 import time
+import requests
+
 from kivy.app import App
 from kivy.clock import Clock
+from kivy.lang import Builder
+from kivy.properties import StringProperty, BooleanProperty
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
-from kivy.uix.image import Image
-from kivy.uix.label import Label
-from kivy.uix.popup import Popup
-from kivy.uix.textinput import TextInput
 
-try:
-  from android.permissions import Permission, request_permissions
+# GPS-Unterstützung
+from plyer import gps
 
-  ANDROID_PLATFORM = True
-except ImportError:
-  ANDROID_PLATFORM = False
+
+KV_CODE = """
+<TrackerLayout>:
+    orientation: "vertical"
+    padding: "20dp"
+    spacing: "15dp"
+
+    Label:
+        text: "LKW TRACKER"
+        font_size: "26sp"
+        bold: True
+        size_hint_y: None
+        height: "60dp"
+
+    Label:
+        text: root.status_text
+        font_size: "17sp"
+        halign: "center"
+        valign: "middle"
+        text_size: self.width, None
+
+    Label:
+        text: root.location_text
+        font_size: "16sp"
+        halign: "center"
+        valign: "middle"
+        text_size: self.width, None
+
+    Button:
+        text: "Tracking starten" if not root.tracking else "Tracking stoppen"
+        size_hint_y: None
+        height: "60dp"
+        on_release: root.toggle_tracking()
+
+    Label:
+        text: "Telegram: " + root.telegram_status
+        font_size: "14sp"
+        size_hint_y: None
+        height: "40dp"
+"""
+
+
+class TrackerLayout(BoxLayout):
+    status_text = StringProperty("Bereit")
+    location_text = StringProperty("Warte auf GPS-Standort ...")
+    telegram_status = StringProperty("Nicht konfiguriert")
+    tracking = BooleanProperty(False)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.latitude = None
+        self.longitude = None
+        self.accuracy = None
+
+        self.last_send = 0
+        self.send_interval = 60
+
+        # Telegram-Daten hier eintragen
+        self.telegram_token = ""
+        self.telegram_chat_id = ""
+
+        self.telegram_enabled = bool(
+            self.telegram_token and self.telegram_chat_id
+        )
+
+        if self.telegram_enabled:
+            self.telegram_status = "Konfiguriert"
+
+        self._gps_started = False
+
+    def toggle_tracking(self):
+        if self.tracking:
+            self.stop_tracking()
+        else:
+            self.start_tracking()
+
+    def start_tracking(self):
+        self.tracking = True
+        self.status_text = "GPS wird gestartet ..."
+        self.location_text = "Warte auf GPS-Signal ..."
+
+        try:
+            gps.configure(
+                on_location=self.on_location,
+                on_status=self.on_gps_status
+            )
+
+            gps.start(
+                minTime=5000,
+                minDistance=10
+            )
+
+            self._gps_started = True
+            self.status_text = "Tracking aktiv"
+
+        except NotImplementedError:
+            self.status_text = "GPS auf diesem Gerät nicht verfügbar"
+
+        except Exception as exc:
+            self.status_text = f"GPS-Fehler: {exc}"
+            self.tracking = False
+
+    def stop_tracking(self):
+        self.tracking = False
+
+        if self._gps_started:
+            try:
+                gps.stop()
+            except Exception:
+                pass
+
+            self._gps_started = False
+
+        self.status_text = "Tracking gestoppt"
+
+    def on_location(self, **kwargs):
+        latitude = kwargs.get("lat")
+        longitude = kwargs.get("lon")
+        accuracy = kwargs.get("accuracy")
+
+        if latitude is None or longitude is None:
+            return
+
+        Clock.schedule_once(
+            lambda dt: self.update_location(
+                latitude,
+                longitude,
+                accuracy
+            )
+        )
+
+    def update_location(self, latitude, longitude, accuracy):
+        self.latitude = latitude
+        self.longitude = longitude
+        self.accuracy = accuracy
+
+        accuracy_text = (
+            f"{accuracy:.1f} m"
+            if isinstance(accuracy, (int, float))
+            else "unbekannt"
+        )
+
+        self.location_text = (
+            f"Breitengrad: {latitude:.6f}\n"
+            f"Längengrad: {longitude:.6f}\n"
+            f"Genauigkeit: {accuracy_text}"
+        )
+
+        self.status_text = "GPS-Position empfangen"
+
+        if self.tracking:
+            now = time.time()
+
+            if now - self.last_send >= self.send_interval:
+                self.last_send = now
+
+                if self.telegram_enabled:
+                    threading.Thread(
+                        target=self.send_telegram_location,
+                        daemon=True
+                    ).start()
+
+    def on_gps_status(self, stype, status):
+        Clock.schedule_once(
+            lambda dt: self.set_gps_status(stype, status)
+        )
+
+    def set_gps_status(self, stype, status):
+        self.status_text = f"GPS: {status}"
+
+    def send_telegram_location(self):
+        if not self.telegram_enabled:
+            return
+
+        url = (
+            "https://api.telegram.org/"
+            f"bot{self.telegram_token}/sendLocation"
+        )
+
+        data = {
+            "chat_id": self.telegram_chat_id,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+        }
+
+        try:
+            response = requests.post(
+                url,
+                data=data,
+                timeout=15
+            )
+
+            response.raise_for_status()
+            result = response.json()
+
+            if result.get("ok"):
+                message = "Standort erfolgreich gesendet"
+            else:
+                message = "Telegram konnte Standort nicht senden"
+
+        except Exception as exc:
+            message = f"Telegram-Fehler: {exc}"
+
+        Clock.schedule_once(
+            lambda dt: self.set_telegram_status(message)
+        )
+
+    def set_telegram_status(self, message):
+        self.telegram_status = message
 
 
 class LKWTrackerApp(App):
+    def build(self):
+        Builder.load_string(KV_CODE)
+        return TrackerLayout()
 
-  def build(self):
-    self.title = "LKW Tracker"
-    self.check_and_request_permissions()
+    def on_pause(self):
+        # Android darf die App pausieren.
+        # Ein echter Hintergrunddienst muss separat eingerichtet werden.
+        return True
 
-    # Reines, stabiles Layout mit einem satten Hintergrundfarbton per Label oder reinem BoxLayout
-    root_layout = BoxLayout(orientation="vertical", padding=15, spacing=15)
-
-    # 1. OBERER BEREICH: Das Lkw-Bild als Banner
-    if os.path.exists("icon.png"):
-      img_banner = Image(
-          source="icon.png",
-          size_hint=(1, 0.35),
-          allow_stretch=True,
-          keep_ratio=True,
-      )
-      root_layout.add_widget(img_banner)
-
-    # 2. STATUS-BEREICH: Riesige Schrift, absolut minimalistisch
-    self.status_label = Label(
-        text="Status: Bereit\nKilometer: 0.00 km",
-        font_size=50,
-        halign="center",
-        valign="middle",
-        bold=True,
-        color=(0.1, 1.0, 0.3, 1),
-        size_hint=(1, 0.4),
-    )
-    self.status_label.bind(size=self.status_label.setter("text_size"))
-    root_layout.add_widget(self.status_label)
-
-    # 3. BUTTONS: Die 3 Hauptfunktionen unten
-    btn_layout = BoxLayout(
-        orientation="horizontal", spacing=10, size_hint=(1, 0.25)
-    )
-
-    btn_start = Button(
-        text="SCHICHT\nSTART",
-        background_color=(0.1, 0.8, 0.3, 1),
-        font_size=22,
-        bold=True,
-    )
-    btn_start.bind(on_press=self.start_shift)
-
-    btn_end = Button(
-        text="FEIERABEND",
-        background_color=(0.8, 0.2, 0.2, 1),
-        font_size=22,
-        bold=True,
-    )
-    btn_end.bind(on_press=self.prompt_feierabend)
-
-    btn_logcat = Button(
-        text="LOGCAT\n(FEHLER)",
-        background_color=(0.2, 0.5, 0.9, 1),
-        font_size=22,
-        bold=True,
-    )
-    btn_logcat.bind(on_press=self.show_logcat_popup)
-
-    btn_layout.add_widget(btn_start)
-    btn_layout.add_widget(btn_end)
-    btn_layout.add_widget(btn_logcat)
-
-    root_layout.add_widget(btn_layout)
-
-    Clock.schedule_interval(self.check_status_file, 3)
-    return root_layout
-
-  def check_and_request_permissions(self):
-    if ANDROID_PLATFORM:
-      try:
-        request_permissions([
-            Permission.ACCESS_FINE_LOCATION,
-            Permission.ACCESS_COARSE_LOCATION,
-            Permission.FOREGROUND_SERVICE,
-        ])
-      except:
-        pass
-
-  def start_shift(self, instance):
-    self.update_command("START")
-    self.status_label.text = "Status: Schicht aktiv!\nGPS zeichnet auf..."
-
-  def prompt_feierabend(self, instance):
-    content = BoxLayout(orientation="vertical", padding=20, spacing=15)
-    lbl = Label(
-        text="FEIERABEND!\nPause in Minuten:", font_size=24, bold=True
-    )
-    content.add_widget(lbl)
-
-    self.pause_input = TextInput(
-        text="45", multiline=False, input_filter="int", font_size=28
-    )
-    content.add_widget(self.pause_input)
-
-    btn_confirm = Button(
-        text="Bestätigen & Beenden",
-        background_color=(0.2, 0.5, 0.9, 1),
-        font_size=22,
-        bold=True,
-    )
-    popup = Popup(
-        title="Schicht beenden",
-        content=content,
-        size_hint=(0.9, 0.6),
-        auto_dismiss=False,
-    )
-    btn_confirm.bind(on_press=lambda x: self.finish_shift(popup))
-    content.add_widget(btn_confirm)
-    popup.open()
-
-  def finish_shift(self, popup):
-    pause_min = self.pause_input.text
-    popup.dismiss()
-    self.update_command("STOP", pause=pause_min)
-    self.status_label.text = (
-        f"Status: Schicht beendet.\nPause: {pause_min} Min."
-    )
-
-  def show_logcat_popup(self, instance):
-    content = BoxLayout(orientation="vertical", padding=15, spacing=10)
-    log_text = "Android System aktiv." if ANDROID_PLATFORM else "Testmodus."
-    lbl = Label(text=log_text, font_size=20)
-    content.add_widget(lbl)
-    btn_close = Button(text="Schließen", font_size=22, bold=True)
-    popup = Popup(
-        title="Logcat", content=content, size_hint=(0.9, 0.7), auto_dismiss=True
-    )
-    btn_close.bind(on_press=popup.dismiss)
-    content.add_widget(btn_close)
-    popup.open()
-
-  def update_command(self, cmd, pause=0):
-    try:
-      data = {
-          "command": cmd,
-          "pause_minutes": int(pause),
-          "timestamp": time.time(),
-      }
-      with open("command.json", "w") as f:
-        json.dump(data, f)
-    except:
-        pass
-
-  def check_status_file(self, dt):
-    if os.path.exists("status.json"):
-      try:
-        with open("status.json", "r") as f:
-          data = json.load(f)
-          self.status_label.text = f"Status: {data.get('status', 'Inaktiv')}\nKilometer: {data.get('km', 0.0):.2f} km"
-      except:
+    def on_stop(self):
+        # GPS im Hintergrund wird durch diese Hauptdatei allein
+        # nicht garantiert.
         pass
 
 
 if __name__ == "__main__":
-  LKWTrackerApp().run()
+    LKWTrackerApp().run()
