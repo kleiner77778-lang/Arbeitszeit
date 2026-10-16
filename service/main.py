@@ -7,6 +7,28 @@ print("LkwService gestartet")
 
 SERVER_URL = "https://example.com/api/location"
 STATUS_FILE = "status.json"
+HISTORY_FILE = "track_history.json"
+
+
+def save_to_history(lat, lon):
+  try:
+    history = []
+    if os.path.exists(HISTORY_FILE):
+      with open(HISTORY_FILE, "r") as f:
+        try:
+          history = json.load(f)
+        except:
+          history = []
+
+    # Neuen Punkt anhängen (max. letzte 100 Punkte behalten)
+    history.append({"lat": lat, "lon": lon, "timestamp": time.time()})
+    if len(history) > 100:
+      history.pop(0)
+
+    with open(HISTORY_FILE, "w") as f:
+      json.dump(history, f)
+  except Exception as e:
+    print(f"Fehler beim Speichern der Historie: {e}")
 
 
 def save_status(lat, lon):
@@ -15,7 +37,7 @@ def save_status(lat, lon):
         "lat": lat,
         "lon": lon,
         "timestamp": time.time(),
-        "status": "GPS aktiv",
+        "status": "GPS aktiv & loggt",
     }
     with open(STATUS_FILE, "w") as f:
       json.dump(data, f)
@@ -25,9 +47,11 @@ def save_status(lat, lon):
 
 def send_location(lat, lon):
   save_status(lat, lon)
+  save_to_history(lat, lon)
   try:
     data = {"lat": lat, "lon": lon, "timestamp": time.time()}
-    print(f"Standort gesendet: Lat={lat}, Lon={lon}")
+    # response = requests.post(SERVER_URL, json=data, timeout=5)
+    print(f"Standort verarbeitet & gespeichert: Lat={lat}, Lon={lon}")
   except Exception as e:
     print(f"Fehler beim Senden: {e}")
 
