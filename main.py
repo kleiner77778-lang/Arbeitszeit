@@ -28,10 +28,10 @@ class LKWTrackerApp(App):
     # Hauptlayout
     root_layout = BoxLayout(orientation='vertical', padding=20, spacing=20)
 
-    # 1. OBERER BEREICH: Große, gut lesbare Status-Anzeige für Brillenträger
+    # 1. OBERER BEREICH: Extra große, fette Status-Anzeige für Brillenträger
     self.status_label = Label(
         text="Status: Bereit\nKilometer: 0.00 km",
-        font_size=28,  # Extra groß für gute Lesbarkeit
+        font_size=36,  # Nochmals deutlich vergrößert!
         halign='center',
         valign='middle',
         bold=True,
@@ -39,15 +39,15 @@ class LKWTrackerApp(App):
     self.status_label.bind(size=self.status_label.setter('text_size'))
     root_layout.add_widget(self.status_label)
 
-    # 2. UNTERER BEREICH: 3 Kompakte Buttons nebeneinander am Rand
+    # 2. UNTERER BEREICH: 3 Kompakte Buttons nebeneinander am Rand (größere Schrift)
     btn_layout = BoxLayout(
-        orientation='horizontal', spacing=10, size_hint=(1, 0.22)
+        orientation='horizontal', spacing=10, size_hint=(1, 0.25)
     )
 
     btn_start = Button(
         text="Schicht\nStart",
         background_color=(0.1, 0.6, 0.1, 1),
-        font_size=16,
+        font_size=20,  # Größere Button-Schrift
         bold=True,
     )
     btn_start.bind(on_press=self.start_shift)
@@ -55,7 +55,7 @@ class LKWTrackerApp(App):
     btn_end = Button(
         text="Feierabend",
         background_color=(0.8, 0.2, 0.2, 1),
-        font_size=16,
+        font_size=20,  # Größere Button-Schrift
         bold=True,
     )
     btn_end.bind(on_press=self.prompt_feierabend)
@@ -63,7 +63,7 @@ class LKWTrackerApp(App):
     btn_logcat = Button(
         text="Logcat\n(Fehler)",
         background_color=(0.2, 0.4, 0.8, 1),
-        font_size=16,
+        font_size=20,  # Größere Button-Schrift
         bold=True,
     )
     btn_logcat.bind(on_press=self.show_logcat_popup)
@@ -99,21 +99,22 @@ class LKWTrackerApp(App):
 
     lbl_popup = Label(
         text="Feierabend!\nBitte Pause in Minuten eintragen:",
-        font_size=20,
+        font_size=22,
         halign='center',
+        bold=True,
     )
     lbl_popup.bind(size=lbl_popup.setter('text_size'))
     content.add_widget(lbl_popup)
 
     self.pause_input = TextInput(
-        text="45", multiline=False, input_filter="int", font_size=24
+        text="45", multiline=False, input_filter="int", font_size=28
     )
     content.add_widget(self.pause_input)
 
     btn_confirm = Button(
         text="Bestätigen & Schicht beenden",
         background_color=(0.2, 0.4, 0.8, 1),
-        font_size=18,
+        font_size=20,
         size_hint=(1, 0.3),
         bold=True,
     )
@@ -153,12 +154,12 @@ class LKWTrackerApp(App):
           " simuliert."
       )
 
-    lbl_log = Label(text=log_text, font_size=16, halign='left', valign='top')
+    lbl_log = Label(text=log_text, font_size=18, halign='left', valign='top')
     lbl_log.bind(size=lbl_log.setter('text_size'))
     content.add_widget(lbl_log)
 
     btn_close = Button(
-        text="Schließen", size_hint=(1, 0.25), font_size=18, bold=True
+        text="Schließen", size_hint=(1, 0.25), font_size=20, bold=True
     )
     popup = Popup(
         title="Logcat & Fehleranalyse",
