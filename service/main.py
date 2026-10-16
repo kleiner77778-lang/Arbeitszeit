@@ -1,14 +1,27 @@
 import time
+import requests
 from plyer import gps
 
 print("LkwService gestartet")
 
+# Trage hier später deine Ziel-URL oder deinen Endpunkt ein
+SERVER_URL = "https://example.com/api/location"
+
+
+def send_location(lat, lon):
+  try:
+    data = {"lat": lat, "lon": lon, "timestamp": time.time()}
+    # response = requests.post(SERVER_URL, json=data, timeout=5)
+    print(f"Sende Standort: Lat={lat}, Lon={lon}")
+  except Exception as e:
+    print(f"Fehler beim Senden: {e}")
+
 
 def on_location(**kwargs):
-  # Hier kommt später deine Logik hin, wenn GPS-Daten empfangen werden
   lat = kwargs.get("lat")
   lon = kwargs.get("lon")
-  print(f"Standort erhalten: Lat={lat}, Lon={lon}")
+  if lat and lon:
+    send_location(lat, lon)
 
 
 def on_status(stype, status):
@@ -23,5 +36,4 @@ except Exception as e:
   print(f"Fehler beim Starten von GPS: {e}")
 
 while True:
-  # Der Dienst läuft im Hintergrund weiter
   time.sleep(10)
