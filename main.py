@@ -3,7 +3,6 @@ import os
 import time
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.graphics import Color, Rectangle
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.image import Image
@@ -11,7 +10,6 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 
-# Android-spezifische Berechtigungen prüfen/anfordern, falls verfügbar
 try:
   from android.permissions import Permission, request_permissions
 
@@ -23,22 +21,13 @@ except ImportError:
 class LKWTrackerApp(App):
 
   def build(self):
-    self.title = "LKW Tracker - Zeiterfassung"
-
-    # Beim Start direkt Berechtigungen anfordern (falls Android)
+    self.title = "LKW Tracker"
     self.check_and_request_permissions()
 
-    # Hauptlayout mit dunklem Cyberpunk-Hintergrund per Canvas
+    # Reines, stabiles Layout mit einem satten Hintergrundfarbton per Label oder reinem BoxLayout
     root_layout = BoxLayout(orientation="vertical", padding=15, spacing=15)
 
-    with root_layout.canvas.before:
-      # Satter, dunkler Cyberpunk-Hintergrund (Sehr dunkles Blau/Grün)
-      Color(0.02, 0.08, 0.04, 1)
-      self.bg_rect = Rectangle(size=root_layout.size, pos=root_layout.pos)
-
-    root_layout.bind(size=self._update_bg, pos=self._update_bg)
-
-    # 1. OBERER BEREICH: Dein Lkw-Bild (icon.png) als Banner
+    # 1. OBERER BEREICH: Das Lkw-Bild als Banner
     if os.path.exists("icon.png"):
       img_banner = Image(
           source="icon.png",
@@ -48,27 +37,27 @@ class LKWTrackerApp(App):
       )
       root_layout.add_widget(img_banner)
 
-    # 2. MITTLERER BEREICH: RIESIGE, fette Status-Anzeige für Brillenträger
+    # 2. STATUS-BEREICH: Riesige Schrift, absolut minimalistisch
     self.status_label = Label(
         text="Status: Bereit\nKilometer: 0.00 km",
-        font_size=52,  # Riesig und gut lesbar!
+        font_size=50,
         halign="center",
         valign="middle",
         bold=True,
-        color=(0.1, 1.0, 0.3, 1),  # Leuchtendes Matrix-Grün
-        size_hint=(1, 0.35),
+        color=(0.1, 1.0, 0.3, 1),
+        size_hint=(1, 0.4),
     )
     self.status_label.bind(size=self.status_label.setter("text_size"))
     root_layout.add_widget(self.status_label)
 
-    # 3. UNTERER BEREICH: 3 Buttons mit großer Schrift
+    # 3. BUTTONS: Die 3 Hauptfunktionen unten
     btn_layout = BoxLayout(
         orientation="horizontal", spacing=10, size_hint=(1, 0.25)
     )
 
     btn_start = Button(
         text="SCHICHT\nSTART",
-        background_color=(0.1, 0.85, 0.3, 1),
+        background_color=(0.1, 0.8, 0.3, 1),
         font_size=22,
         bold=True,
     )
@@ -76,7 +65,7 @@ class LKWTrackerApp(App):
 
     btn_end = Button(
         text="FEIERABEND",
-        background_color=(0.85, 0.2, 0.2, 1),
+        background_color=(0.8, 0.2, 0.2, 1),
         font_size=22,
         bold=True,
     )
@@ -84,7 +73,7 @@ class LKWTrackerApp(App):
 
     btn_logcat = Button(
         text="LOGCAT\n(FEHLER)",
-        background_color=(0.1, 0.5, 0.9, 1),
+        background_color=(0.2, 0.5, 0.9, 1),
         font_size=22,
         bold=True,
     )
@@ -96,14 +85,8 @@ class LKWTrackerApp(App):
 
     root_layout.add_widget(btn_layout)
 
-    # Regelmäßig Daten einlesen
     Clock.schedule_interval(self.check_status_file, 3)
-
     return root_layout
-
-  def _update_bg(self, instance, value):
-    self.bg_rect.size = instance.size
-    self.bg_rect.pos = instance.pos
 
   def check_and_request_permissions(self):
     if ANDROID_PLATFORM:
@@ -113,8 +96,8 @@ class LKWTrackerApp(App):
             Permission.ACCESS_COARSE_LOCATION,
             Permission.FOREGROUND_SERVICE,
         ])
-      except Exception as e:
-        print(f"Fehler beim Anfordern der Berechtigungen: {e}")
+      except:
+        pass
 
   def start_shift(self, instance):
     self.update_command("START")
@@ -122,15 +105,10 @@ class LKWTrackerApp(App):
 
   def prompt_feierabend(self, instance):
     content = BoxLayout(orientation="vertical", padding=20, spacing=15)
-
-    lbl_popup = Label(
-        text="FEIERABEND!\nPause in Minuten eintragen:",
-        font_size=24,
-        halign="center",
-        bold=True,
+    lbl = Label(
+        text="FEIERABEND!\nPause in Minuten:", font_size=24, bold=True
     )
-    lbl_popup.bind(size=lbl_popup.setter("text_size"))
-    content.add_widget(lbl_popup)
+    content.add_widget(lbl)
 
     self.pause_input = TextInput(
         text="45", multiline=False, input_filter="int", font_size=28
@@ -139,22 +117,18 @@ class LKWTrackerApp(App):
 
     btn_confirm = Button(
         text="Bestätigen & Beenden",
-        background_color=(0.1, 0.5, 0.9, 1),
+        background_color=(0.2, 0.5, 0.9, 1),
         font_size=22,
-        size_hint=(1, 0.3),
         bold=True,
     )
-
     popup = Popup(
-        title="Schicht beenden & Pause",
+        title="Schicht beenden",
         content=content,
         size_hint=(0.9, 0.6),
         auto_dismiss=False,
     )
-
     btn_confirm.bind(on_press=lambda x: self.finish_shift(popup))
     content.add_widget(btn_confirm)
-
     popup.open()
 
   def finish_shift(self, popup):
@@ -162,60 +136,40 @@ class LKWTrackerApp(App):
     popup.dismiss()
     self.update_command("STOP", pause=pause_min)
     self.status_label.text = (
-        f"Status: Schicht beendet.\nPause: {pause_min} Min. eingetragen."
+        f"Status: Schicht beendet.\nPause: {pause_min} Min."
     )
 
   def show_logcat_popup(self, instance):
     content = BoxLayout(orientation="vertical", padding=15, spacing=10)
-
-    log_text = "System-Logs / Berechtigungsstatus:\n"
-    if ANDROID_PLATFORM:
-      log_text += "Android-Plattform aktiv.\nBerechtigungen angefordert.\n"
-    else:
-      log_text += "Test-Modus (kein Android-Gerät).\n"
-
-    lbl_log = Label(text=log_text, font_size=20, halign="left", valign="top")
-    lbl_log.bind(size=lbl_log.setter("text_size"))
-    content.add_widget(lbl_log)
-
-    btn_close = Button(
-        text="Schließen", size_hint=(1, 0.25), font_size=22, bold=True
-    )
+    log_text = "Android System aktiv." if ANDROID_PLATFORM else "Testmodus."
+    lbl = Label(text=log_text, font_size=20)
+    content.add_widget(lbl)
+    btn_close = Button(text="Schließen", font_size=22, bold=True)
     popup = Popup(
-        title="Logcat & Fehleranalyse",
-        content=content,
-        size_hint=(0.9, 0.7),
-        auto_dismiss=True,
+        title="Logcat", content=content, size_hint=(0.9, 0.7), auto_dismiss=True
     )
     btn_close.bind(on_press=popup.dismiss)
     content.add_widget(btn_close)
-
     popup.open()
 
   def update_command(self, cmd, pause=0):
-    cmd_file = "command.json"
     try:
       data = {
           "command": cmd,
           "pause_minutes": int(pause),
           "timestamp": time.time(),
       }
-      with open(cmd_file, "w") as f:
+      with open("command.json", "w") as f:
         json.dump(data, f)
-    except Exception as e:
-      print(f"Fehler beim Schreiben des Befehls: {e}")
+    except:
+        pass
 
   def check_status_file(self, dt):
-    status_file = "status.json"
-    if os.path.exists(status_file):
+    if os.path.exists("status.json"):
       try:
-        with open(status_file, "r") as f:
+        with open("status.json", "r") as f:
           data = json.load(f)
-          status = data.get("status", "Inaktiv")
-          km = data.get("km", 0.0)
-          self.status_label.text = (
-              f"Status: {status}\nKilometer: {km:.2f} km"
-          )
+          self.status_label.text = f"Status: {data.get('status', 'Inaktiv')}\nKilometer: {data.get('km', 0.0):.2f} km"
       except:
         pass
 
