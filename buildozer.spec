@@ -1,101 +1,79 @@
 [app]
 
-# (str) Title of your application
+# Name der Anwendung
 title = LKW Tracker
 
-# (str) Package name
+# Paketname
 package.name = lkwtracker
 
-# (str) Package domain (needed for android packaging)
+# Paket-Domain
 package.domain = org.lkwtracker
 
-# (str) Source files to include (let it include json for our IPC)
+# Dateiendungen, die eingebunden werden
 source.include_exts = py,png,jpg,kv,atlas,json
 
-# (list) Source files to include (let it include service folder)
+# Zusätzliche Dateien und Ordner
 source.include_patterns = assets/*,service/*
 
-# (str) Application directory
+# Quellverzeichnis
 source.dir = .
 
-# (str) Version of the application
+# Versionsnummer
 version = 0.1
 
-# (list) Application requirements
-# Fix auf Python 3.11 und alle notwendigen Netzwerk- / SSL-Bibliotheken für Telegram
-requirements = python3.11,kivy,requests,plyer,jnius,urllib3,certifi,idna,charset_normalizer
+# Benötigte Python-Pakete
+requirements = python3,kivy,requests,plyer,pyjnius,urllib3,certifi,idna,charset_normalizer
 
-# (str) Supported orientations ('all' erlaubt freie Drehung des Bildschirms)
+# Bildschirmorientierung
 orientation = all
 
-# (list) Permissions
+# Android-Berechtigungen
 android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREGROUND_SERVICE,FOREGROUND_SERVICE_LOCATION
 
-# (list) Features
+# GPS-Funktion
 android.features = android.hardware.location.gps
 
-# (str) Application Icon
+# App-Symbol
 icon.filename = icon.png
 
-# (str) Presplash image
-# presplash.filename = %(source.dir)s/data/presplash.png
-
-# (list) List of services to declare
+# Hintergrunddienst für die GPS-Ortung
 services = lkwservice:service/main.py:foreground:sticky
 
-#
-# Android specific
-#
 
-# (int) Target Android API, should be as high as possible.
+# Android-Einstellungen
+
+# Android Target SDK
 android.api = 33
 
-# (int) Minimum API your APK will support.
+# Minimale Android-Version
 android.minapi = 21
 
-# (str) Android SDK version to use
+# Android SDK
 android.sdk = 33
 
-# (str) Android NDK version to use
+# Android NDK
 android.ndk = 25b
 
-# (bool) Use Android X
+# AndroidX aktivieren
 android.androidx = True
 
-# (str) python-for-android branch to use
+# Python-for-Android
 p4a.branch = master
 
-# (str) OUYA Console support
-# android.ouya.appui = False
-
-# (str) XML extensions for manifest
-# android.manifest.xml = 
-
-# (str) extra xml to include in <application> tag
-# android.manifest.application_xml = 
-
-# (str) Android additional adb install args
-# android.adb_install_args = 
-
-# (list) The Android archs to build for, and optionally optimized as arm64-v8a
+# Unterstützte Prozessorarchitekturen
 android.architectures = arm64-v8a, armeabi-v7a
 
-# (bool) enables Android auto backup feature (API >= 23)
+# Android Auto Backup
 android.backup = True
 
-# (str) The format used to package the app for release ('aab' or 'apk')
+# APK erstellen
 android.release_artifact = apk
+
 
 [buildozer]
 
-# (int) Log level (0 = error only, 1 = info, 2 = debug (with command output))
+# Ausführliche Build-Ausgabe
 log_level = 2
 
-# (int) Display warning if buildozer is run as root (0 = False, 1 = True)
+# Warnung bei Ausführung als Root
 warn_root = 1
-
-# (str) Path to build artifact, storage for global sdcard
-# bin_dir = ./bin
-
-# (str) Path to build output, where py4a will be place
-# build_output_dir = ./.build_output
