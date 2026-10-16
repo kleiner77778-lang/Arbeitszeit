@@ -22,10 +22,10 @@ source.dir = .
 version = 0.1
 
 # (list) Application requirements
-# Wichtig: requests und alle SSL/Zertifikats-Abhängigkeiten für Telegram!
-requirements = python3,kivy,requests,plyer,jnius,urllib3,certifi,idna,charset_normalizer
+# Fix auf Python 3.11 und alle notwendigen Netzwerk- / SSL-Bibliotheken für Telegram
+requirements = python3.11,kivy,requests,plyer,jnius,urllib3,certifi,idna,charset_normalizer
 
-# (str) Supported orientations (geändert auf 'sensor', damit die App drehbar ist)
+# (str) Supported orientations ('all' erlaubt freie Drehung des Bildschirms)
 orientation = all
 
 # (list) Permissions
@@ -77,7 +77,7 @@ p4a.branch = master
 # (str) Android additional adb install args
 # android.adb_install_args = 
 
-# (list) The Android archs to build for,, and optionally optimzed as arm64-v8a
+# (list) The Android archs to build for, and optionally optimized as arm64-v8a
 android.architectures = arm64-v8a, armeabi-v7a
 
 # (bool) enables Android auto backup feature (API >= 23)
