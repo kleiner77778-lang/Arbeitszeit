@@ -1,20 +1,57 @@
 import json
 import os
+import random
 import time
 from kivy.app import App
 from kivy.clock import Clock
+from kivy.graphics import Color, Rectangle
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.image import Image
+from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
+from kivy.uix.widget import Widget
 
 # Android-spezifische Berechtigungen prüfen/anfordern, falls verfügbar
 try:
-  from android.permissions import request_permissions, Permission
+  from android.permissions import Permission, request_permissions
+
   ANDROID_PLATFORM = True
 except ImportError:
   ANDROID_PLATFORM = False
+
+
+# Klasse für den animierten Matrix-Code-Regen im Hintergrund
+class MatrixRainWidget(Widget):
+
+  def __init__(self, **kwargs):
+    super(MatrixRainWidget, self).__init__(**kwargs)
+    self.drops = []
+    for _ in range(30):
+      self.drops.append({
+          "x": random.randint(0, 1000),
+          "y": random.randint(0, 1200),
+          "speed": random.randint(8, 20),
+      })
+    Clock.schedule_interval(self.update_rain, 0.05)
+
+  def update_rain(self, dt):
+    self.canvas.clear()
+    with self.canvas:
+      # Satter dunkler Cyberpunk-Hintergrund
+      Color(0.0, 0.03, 0.01, 1)
+      Rectangle(pos=self.pos, size=self.size)
+
+      # Hellgrüne Matrix-Tropfen
+      Color(0.1, 0.95, 0.2, 0.4)
+      for drop in self.drops:
+        drop["y"] -= drop["speed"]
+        if drop["y"] < 0:
+          drop["y"] = self.height + random.randint(0, 200)
+          drop["x"] = random.randint(0, int(self.width or 800))
+
+        Rectangle(pos=(drop["x"], drop["y"]), size=(6, 35))
 
 
 class LKWTrackerApp(App):
@@ -25,45 +62,69 @@ class LKWTrackerApp(App):
     # Beim Start direkt Berechtigungen anfordern (falls Android)
     self.check_and_request_permissions()
 
-    # Hauptlayout
-    root_layout = BoxLayout(orientation='vertical', padding=20, spacing=20)
+    from kivy.uix.floatlayout import FloatLayout
 
-    # 1. OBERER BEREICH: Extra große, fette Status-Anzeige für Brillenträger
+    root = FloatLayout()
+
+    # 1. Hintergrund-Widget (Matrix-Regen)
+    self.matrix_bg = MatrixRainWidget(
+        size_hint=(1, 1), pos_hint={"x": 0, "y": 0}
+    )
+    root.add_widget(self.matrix_bg)
+
+    # 2. Vordergrund-Layout (Inhalt der App) mit weniger Padding
+    root_layout = BoxLayout(
+        orientation="vertical", padding=10, spacing=10, size_hint=(1, 1)
+    )
+
+    # Lkw-Bild oben im Cockpit (feste Höhe, damit es nicht verschwindet)
+    if os.path.exists("icon.png"):
+      img_banner = Image(
+          source="icon.png",
+          size_hint=(1, 0.35),
+          allow_stretch=True,
+          keep_ratio=True,
+      )
+      root_layout.add_widget(img_banner)
+
+    # Status-Bereich: JETZT RIESIG (font_size=55) für perfekte Lesbarkeit mit Brille!
     self.status_label = Label(
         text="Status: Bereit\nKilometer: 0.00 km",
-        font_size=36,  # Nochmals deutlich vergrößert!
-        halign='center',
-        valign='middle',
+        font_size=55,
+        halign="center",
+        valign="middle",
         bold=True,
+        color=(0.9, 1.0, 0.9, 1),
+        size_hint=(1, 0.35),
     )
-    self.status_label.bind(size=self.status_label.setter('text_size'))
+    self.status_label.bind(size=self.status_label.setter("text_size"))
     root_layout.add_widget(self.status_label)
 
-    # 2. UNTERER BEREICH: 3 Kompakte Buttons nebeneinander am Rand (größere Schrift)
+    # Unterer Bereich: 3 Buttons mit massiver Schrift (font_size=28)
     btn_layout = BoxLayout(
-        orientation='horizontal', spacing=10, size_hint=(1, 0.25)
+        orientation="horizontal", spacing=10, size_hint=(1, 0.25)
     )
 
     btn_start = Button(
-        text="Schicht\nStart",
-        background_color=(0.1, 0.6, 0.1, 1),
-        font_size=20,  # Größere Button-Schrift
+        text="SCHICHT\nSTART",
+        background_color=(0.1, 0.85, 0.3, 1),
+        font_size=24,
         bold=True,
     )
     btn_start.bind(on_press=self.start_shift)
 
     btn_end = Button(
-        text="Feierabend",
-        background_color=(0.8, 0.2, 0.2, 1),
-        font_size=20,  # Größere Button-Schrift
+        text="FEIERABEND",
+        background_color=(0.85, 0.2, 0.2, 1),
+        font_size=24,
         bold=True,
     )
     btn_end.bind(on_press=self.prompt_feierabend)
 
     btn_logcat = Button(
-        text="Logcat\n(Fehler)",
-        background_color=(0.2, 0.4, 0.8, 1),
-        font_size=20,  # Größere Button-Schrift
+        text="LOGCAT\n(FEHLER)",
+        background_color=(0.1, 0.5, 0.9, 1),
+        font_size=24,
         bold=True,
     )
     btn_logcat.bind(on_press=self.show_logcat_popup)
@@ -73,11 +134,12 @@ class LKWTrackerApp(App):
     btn_layout.add_widget(btn_logcat)
 
     root_layout.add_widget(btn_layout)
+    root.add_widget(root_layout)
 
     # Regelmäßig Daten einlesen
     Clock.schedule_interval(self.check_status_file, 3)
 
-    return root_layout
+    return root
 
   def check_and_request_permissions(self):
     if ANDROID_PLATFORM:
@@ -95,26 +157,26 @@ class LKWTrackerApp(App):
     self.status_label.text = "Status: Schicht aktiv!\nGPS zeichnet auf..."
 
   def prompt_feierabend(self, instance):
-    content = BoxLayout(orientation='vertical', padding=20, spacing=15)
+    content = BoxLayout(orientation="vertical", padding=20, spacing=15)
 
     lbl_popup = Label(
-        text="Feierabend!\nBitte Pause in Minuten eintragen:",
-        font_size=22,
-        halign='center',
+        text="FEIERABEND!\nPause in Minuten eintragen:",
+        font_size=26,
+        halign="center",
         bold=True,
     )
-    lbl_popup.bind(size=lbl_popup.setter('text_size'))
+    lbl_popup.bind(size=lbl_popup.setter("text_size"))
     content.add_widget(lbl_popup)
 
     self.pause_input = TextInput(
-        text="45", multiline=False, input_filter="int", font_size=28
+        text="45", multiline=False, input_filter="int", font_size=32
     )
     content.add_widget(self.pause_input)
 
     btn_confirm = Button(
-        text="Bestätigen & Schicht beenden",
-        background_color=(0.2, 0.4, 0.8, 1),
-        font_size=20,
+        text="Bestätigen & Beenden",
+        background_color=(0.1, 0.5, 0.9, 1),
+        font_size=24,
         size_hint=(1, 0.3),
         bold=True,
     )
@@ -140,26 +202,20 @@ class LKWTrackerApp(App):
     )
 
   def show_logcat_popup(self, instance):
-    content = BoxLayout(orientation='vertical', padding=15, spacing=10)
+    content = BoxLayout(orientation="vertical", padding=15, spacing=10)
 
     log_text = "System-Logs / Berechtigungsstatus:\n"
     if ANDROID_PLATFORM:
-      log_text += "Android-Plattform aktiv.\nBerechtigungen wurden angefordert.\n"
-      log_text += (
-          "Tipp: Für detaillierte Logs ADB / Logcat auf dem PC nutzen."
-      )
+      log_text += "Android-Plattform aktiv.\nBerechtigungen angefordert.\n"
     else:
-      log_text += (
-          "Läuft im Test-Modus (kein Android-Gerät erkannt).\nGPS/Logcat"
-          " simuliert."
-      )
+      log_text += "Test-Modus (kein Android-Gerät).\n"
 
-    lbl_log = Label(text=log_text, font_size=18, halign='left', valign='top')
-    lbl_log.bind(size=lbl_log.setter('text_size'))
+    lbl_log = Label(text=log_text, font_size=22, halign="left", valign="top")
+    lbl_log.bind(size=lbl_log.setter("text_size"))
     content.add_widget(lbl_log)
 
     btn_close = Button(
-        text="Schließen", size_hint=(1, 0.25), font_size=20, bold=True
+        text="Schließen", size_hint=(1, 0.25), font_size=24, bold=True
     )
     popup = Popup(
         title="Logcat & Fehleranalyse",
