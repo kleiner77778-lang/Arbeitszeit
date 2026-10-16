@@ -26,7 +26,7 @@ version = 0.1
 requirements = python3,kivy,requests,plyer,jnius,urllib3,certifi,idna,charset_normalizer
 
 # (str) Supported orientations (geändert auf 'sensor', damit die App drehbar ist)
-orientation = sensor
+orientation = all
 
 # (list) Permissions
 android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREGROUND_SERVICE,FOREGROUND_SERVICE_LOCATION
