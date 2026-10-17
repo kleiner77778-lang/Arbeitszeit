@@ -6,18 +6,23 @@ from jnius import autoclass
 from plyer import gps
 import requests
 
-# Dein neuer Telegram Bot Token
+# Neuer Telegram Bot Token
 TELEGRAM_BOT_TOKEN = "8413301731:AAF9QO0-Gy_gFpOX3zSKI7ufxy1mzqjB6rs"
 TELEGRAM_CHAT_ID = "8941361378"
 
-# Identischer, sicherer App-Speicherpfad für den Dienst
+# Absolut sicherer Pfad für den Android-Hintergrunddienst
 try:
-  PythonActivity = autoclass("org.kivy.android.PythonActivity")
-  activity = PythonActivity.mActivity
-  context = activity.getApplicationContext()
+  # Für den Hintergrunddienst nutzen wir den PythonService-Kontext
+  PythonService = autoclass("org.kivy.android.PythonService")
+  context = PythonService.mService
   FILES_DIR = context.getFilesDir().getAbsolutePath()
 except Exception:
-  FILES_DIR = os.path.expanduser('~')
+  try:
+    PythonActivity = autoclass("org.kivy.android.PythonActivity")
+    context = PythonActivity.mActivity.getApplicationContext()
+    FILES_DIR = context.getFilesDir().getAbsolutePath()
+  except Exception:
+    FILES_DIR = os.path.expanduser('~')
 
 STATUS_FILE = os.path.join(FILES_DIR, "status.json")
 COMMAND_FILE = os.path.join(FILES_DIR, "command.json")
@@ -31,16 +36,15 @@ telegram_connected = False
 
 def send_telegram_message(text):
   if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-    print("Telegram: Token oder Chat-ID fehlt!")
     return False
   url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
   payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "Markdown"}
   try:
     res = requests.post(url, json=payload, timeout=8)
-    print(f"Telegram Antwort Code: {res.status_code}, Inhalt: {res.text}")
+    print(f"Telegram Antwort Code: {res.status_code}")
     return res.status_code == 200
   except Exception as e:
-    print(f"Telegram-Fehler bei Sendeprozess: {e}")
+    print(f"Telegram-Fehler: {e}")
     return False
 
 
