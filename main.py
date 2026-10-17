@@ -5,12 +5,15 @@ import subprocess
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.graphics import Color, Line, Rectangle
+from kivy.resources import resource_find
 from kivy.utils import platform
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
+from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
+from kivy.uix.floatlayout import FloatLayout
 
 # Sichere Pfadermittlung für Android & PC
 FILES_DIR = os.path.expanduser('~')
@@ -18,43 +21,32 @@ STATUS_FILE = os.path.join(FILES_DIR, "status.json")
 COMMAND_FILE = os.path.join(FILES_DIR, "command.json")
 
 
-class MatrixRainWithBgWidget(BoxLayout):
-  """Zeichnet das Lkw-Bild als Hintergrund und darüber den fließenden Matrix-Regen"""
+class MatrixRainOverlay(FloatLayout):
+  """Zeichnet den animierten Matrix-Regen als transparentes Overlay"""
 
   def __init__(self, **kwargs):
-    super(MatrixRainWithBgWidget, self).__init__(**kwargs)
+    super(MatrixRainOverlay, self).__init__(**kwargs)
     self.drops = []
-    for _ in range(50):
+    for _ in range(45):
       self.drops.append({
           "x": random.randint(0, 600),
           "y": random.randint(0, 1000),
           "speed": random.randint(5, 15),
-          "length": random.randint(8, 25),
+          "length": random.randint(8, 20),
       })
 
-    # Animation für den fließenden Regen starten (~30 FPS)
-    Clock.schedule_interval(self.update_matrix_bg, 0.03)
+    Clock.schedule_interval(self.update_matrix, 0.03)
 
-  def update_matrix_bg(self, dt):
-    self.canvas.before.clear()
-    with self.canvas.before:
-      # 1. Dein Lkw-Hintergrundbild (background.png)
-      Color(1, 1, 1, 1)
-      self.bg_rect = Rectangle(source="background.png", pos=self.pos, size=self.size)
-
-      # 2. Ein leichter dunkler Schleier, damit der Regen perfekt leuchtet
-      Color(0, 0, 0, 0.3)
-      Rectangle(pos=self.pos, size=self.size)
-
-      # 3. Fließende Matrix-Regentropfen darüberlegen
+  def update_matrix(self, dt):
+    self.canvas.after.clear()
+    with self.canvas.after:
       for drop in self.drops:
         drop["y"] -= drop["speed"]
         if drop["y"] < 0:
           drop["y"] = self.height + random.randint(0, 300)
           drop["x"] = random.randint(0, int(self.width or 400))
 
-        # Leuchtendes Matrix-Grün
-        Color(0, 1, 0.3, 0.7)
+        Color(0, 1, 0.3, 0.5)
         Line(
             points=[
                 drop["x"],
@@ -66,20 +58,39 @@ class MatrixRainWithBgWidget(BoxLayout):
         )
 
 
-class LkwTrackerLayout(MatrixRainWithBgWidget):
+class LkwTrackerLayout(MatrixRainOverlay):
 
   def __init__(self, **kwargs):
     super(LkwTrackerLayout, self).__init__(**kwargs)
-    self.orientation = "vertical"
-    self.padding = 25
-    self.spacing = 15
 
-    # Beim Start Standort-Berechtigungen anfordern
+    # Hintergrundbild sicher über Kivy Resource Finder laden
+    bg_path = resource_find("background.png") or resource_find("78903.jpg")
+    if not bg_path:
+      bg_path = ""  # Fallback, falls kein Bild gefunden wird
+
+    self.bg_image = Image(
+        source=bg_path,
+        allow_stretch=True,
+        keep_ratio=False,
+        size_hint=(1, 1),
+        pos=(0, 0),
+    )
+    self.add_widget(self.bg_image)
+
+    # Haupt-Inhalt als vertikales Layout im Vordergrund
+    content_layout = BoxLayout(
+        orientation="vertical",
+        padding=25,
+        spacing=15,
+        size_hint=(1, 1),
+        pos_hint={"x": 0, "y": 0},
+    )
+
     if platform == "android":
       Clock.schedule_once(self.request_gps_permissions, 1)
 
     # Titel
-    self.add_widget(
+    content_layout.add_widget(
         Label(
             text="ATLAS E-LKW TRACKER",
             font_size="26sp",
@@ -98,7 +109,7 @@ class LkwTrackerLayout(MatrixRainWithBgWidget):
         halign="center",
         color=(1, 1, 1, 1),
     )
-    self.add_widget(self.status_label)
+    content_layout.add_widget(self.status_label)
 
     # GPS-Koordinaten / KM Anzeige
     self.info_label = Label(
@@ -107,7 +118,7 @@ class LkwTrackerLayout(MatrixRainWithBgWidget):
         halign="center",
         color=(0.9, 1, 0.9, 1),
     )
-    self.add_widget(self.info_label)
+    content_layout.add_widget(self.info_label)
 
     # Haupt Start / Stop Button
     self.toggle_btn = Button(
@@ -115,10 +126,10 @@ class LkwTrackerLayout(MatrixRainWithBgWidget):
         font_size="20sp",
         size_hint_y=None,
         height=60,
-        background_color=(0.1, 0.5, 0.1, 1),
+        background_color=(0.1, 0.6, 0.1, 1),
     )
     self.toggle_btn.bind(on_press=self.toggle_tracking)
-    self.add_widget(self.toggle_btn)
+    content_layout.add_widget(self.toggle_btn)
 
     # Untere Layout-Leiste für Extra-Buttons
     extra_layout = BoxLayout(
@@ -128,7 +139,7 @@ class LkwTrackerLayout(MatrixRainWithBgWidget):
     self.btn_extra_start = Button(
         text="Dienst Reset",
         font_size="16sp",
-        background_color=(0.1, 0.3, 0.6, 1),
+        background_color=(0.1, 0.4, 0.8, 1),
     )
     self.btn_extra_start.bind(on_press=self.send_service_ping)
     extra_layout.add_widget(self.btn_extra_start)
@@ -136,12 +147,12 @@ class LkwTrackerLayout(MatrixRainWithBgWidget):
     self.btn_logcat = Button(
         text="🔍 Logcat Fehler",
         font_size="16sp",
-        background_color=(0.6, 0.3, 0.1, 1),
+        background_color=(0.8, 0.4, 0.1, 1),
     )
     self.btn_logcat.bind(on_press=self.show_logcat_popup)
     extra_layout.add_widget(self.btn_logcat)
 
-    self.add_widget(extra_layout)
+    content_layout.add_widget(extra_layout)
 
     # Telegram Status Label
     self.telegram_label = Label(
@@ -152,7 +163,9 @@ class LkwTrackerLayout(MatrixRainWithBgWidget):
         size_hint_y=None,
         height=35,
     )
-    self.add_widget(self.telegram_label)
+    content_layout.add_widget(self.telegram_label)
+
+    self.add_widget(content_layout)
 
     Clock.schedule_interval(self.update_from_service, 1.0)
     self.is_active = False
@@ -177,10 +190,10 @@ class LkwTrackerLayout(MatrixRainWithBgWidget):
   def toggle_btn_style(self):
     if self.is_active:
       self.toggle_btn.text = "Tracking stoppen"
-      self.toggle_btn.background_color = (0.7, 0.1, 0.1, 1)
+      self.toggle_btn.background_color = (0.8, 0.1, 0.1, 1)
     else:
       self.toggle_btn.text = "Tracking starten"
-      self.toggle_btn.background_color = (0.1, 0.5, 0.1, 1)
+      self.toggle_btn.background_color = (0.1, 0.6, 0.1, 1)
 
   def toggle_tracking(self, instance):
     self.is_active = not self.is_active
