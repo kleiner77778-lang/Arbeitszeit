@@ -1,79 +1,37 @@
 [app]
 
-# Name der Anwendung
 title = LKW Tracker
-
-# Paketname
 package.name = lkwtracker
-
-# Paket-Domain
 package.domain = org.lkwtracker
 
-# Dateiendungen, die eingebunden werden
 source.include_exts = py,png,jpg,kv,atlas,json
-
-# Zusätzliche Dateien und Ordner
-source.include_patterns = assets/*,service/*
-
-# Quellverzeichnis
 source.dir = .
 
-# Versionsnummer
 version = 0.1
 
-# Benötigte Python-Pakete
-requirements = python3,kivy,requests,plyer,pyjnius,urllib3,certifi,idna,charset_normalizer
+# Hier haben wir urllib3, certifi etc. ergänzt, damit Telegram-Nachrichten fehlerfrei rausgehen
+requirements = python3,kivy,requests,plyer,jnius,urllib3,certifi,idna,charset_normalizer
 
-# Bildschirmorientierung
+# Geändert auf 'all', damit sich die App frei drehen kann
 orientation = all
 
-# Android-Berechtigungen
+# Berechtigungen inkl. Foreground Service für Android 14+
 android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREGROUND_SERVICE,FOREGROUND_SERVICE_LOCATION
 
-# GPS-Funktion
-android.features = android.hardware.location.gps
+# Registrierung des Hintergrund-Dienstes
+services = lkwservice:service/main.py:foreground:sticky:foregroundServiceType=location
 
-# App-Symbol
-icon.filename = icon.png
-
-# Hintergrunddienst für die GPS-Ortung
-services = lkwservice:service/main.py:foreground:sticky
-
-
-# Android-Einstellungen
-
-# Android Target SDK
-android.api = 33
-
-# Minimale Android-Version
-android.minapi = 21
-
-# Android SDK
-android.sdk = 33
-
-# Android NDK
+# Android 14+ Build-Einstellungen
+android.accept_sdk_license = True
+android.api = 34
+android.minapi = 24
+android.ndk_api = 24
 android.ndk = 25b
+android.sdk_build_tools_version = 34.0.0
+android.archs = arm64-v8a
 
-# AndroidX aktivieren
-android.androidx = True
-
-# Python-for-Android
-p4a.branch = master
-
-# Unterstützte Prozessorarchitekturen
-android.architectures = arm64-v8a, armeabi-v7a
-
-# Android Auto Backup
-android.backup = True
-
-# APK erstellen
-android.release_artifact = apk
-
+p4a.bootstrap = sdl2
 
 [buildozer]
-
-# Ausführliche Build-Ausgabe
 log_level = 2
-
-# Warnung bei Ausführung als Root
-warn_root = 1
+warn_on_root = 1
