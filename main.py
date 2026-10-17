@@ -1,22 +1,71 @@
 import json
 import os
+import random
 import subprocess
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.utils import platform
+from kivy.graphics import Color, Line, Rectangle
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 
-# Sichere Pfadermittlung ohne pyjnius Absturz
+# Sichere Pfadermittlung für Android & PC
 FILES_DIR = os.path.expanduser('~')
 STATUS_FILE = os.path.join(FILES_DIR, "status.json")
 COMMAND_FILE = os.path.join(FILES_DIR, "command.json")
 
 
-class LkwTrackerLayout(BoxLayout):
+class MatrixRainWithBgWidget(BoxLayout):
+  """Zeichnet das Lkw-Bild als Hintergrund und darüber den fließenden Matrix-Regen"""
+
+  def __init__(self, **kwargs):
+    super(MatrixRainWithBgWidget, self).__init__(**kwargs)
+    self.drops = []
+    for _ in range(50):
+      self.drops.append({
+          "x": random.randint(0, 600),
+          "y": random.randint(0, 1000),
+          "speed": random.randint(5, 15),
+          "length": random.randint(8, 25),
+      })
+
+    # Animation für den fließenden Regen starten (~30 FPS)
+    Clock.schedule_interval(self.update_matrix_bg, 0.03)
+
+  def update_matrix_bg(self, dt):
+    self.canvas.before.clear()
+    with self.canvas.before:
+      # 1. Dein Lkw-Hintergrundbild (background.png)
+      Color(1, 1, 1, 1)
+      self.bg_rect = Rectangle(source="background.png", pos=self.pos, size=self.size)
+
+      # 2. Ein leichter dunkler Schleier (Alpha 0.3), damit der Regen noch besser leuchtet
+      Color(0, 0, 0, 0.3)
+      Rectangle(pos=self.pos, size=self.size)
+
+      # 3. Fließende Matrix-Regentropfen darüberlegen
+      for drop in self.drops:
+        drop["y"] -= drop["speed"]
+        if drop["y"] < 0:
+          drop["y"] = self.height + random.randint(0, 300)
+          drop["x"] = random.randint(0, int(self.width or 400))
+
+        # Leuchtendes Matrix-Grün
+        Color(0, 1, 0.3, 0.7)
+        Line(
+            points=[
+                drop["x"],
+                drop["y"],
+                drop["x"],
+                drop["y"] + drop["length"] * 10,
+            ],
+            width=1.5,
+        )
+
+
+class LkwTrackerLayout(MatrixRainWithBgWidget):
 
   def __init__(self, **kwargs):
     super(LkwTrackerLayout, self).__init__(**kwargs)
@@ -35,6 +84,7 @@ class LkwTrackerLayout(BoxLayout):
             font_size="28sp",
             bold=True,
             halign="center",
+            color=(0.9, 1, 0.9, 1),
             size_hint_y=None,
             height=60,
         )
@@ -42,13 +92,19 @@ class LkwTrackerLayout(BoxLayout):
 
     # Status-Anzeige
     self.status_label = Label(
-        text="Tracking gestoppt", font_size="20sp", halign="center"
+        text="Tracking gestoppt",
+        font_size="20sp",
+        halign="center",
+        color=(1, 1, 1, 1),
     )
     self.add_widget(self.status_label)
 
     # GPS-Koordinaten / KM Anzeige
     self.info_label = Label(
-        text="Warte auf GPS-Signal ...", font_size="16sp", halign="center"
+        text="Warte auf GPS-Signal ...",
+        font_size="16sp",
+        halign="center",
+        color=(0.9, 1, 0.9, 1),
     )
     self.add_widget(self.info_label)
 
@@ -58,7 +114,7 @@ class LkwTrackerLayout(BoxLayout):
         font_size="20sp",
         size_hint_y=None,
         height=60,
-        background_color=(0.2, 0.6, 0.2, 1),
+        background_color=(0.1, 0.5, 0.1, 1),
     )
     self.toggle_btn.bind(on_press=self.toggle_tracking)
     self.add_widget(self.toggle_btn)
@@ -71,7 +127,7 @@ class LkwTrackerLayout(BoxLayout):
     self.btn_extra_start = Button(
         text="Dienst Reset",
         font_size="16sp",
-        background_color=(0.2, 0.4, 0.7, 1),
+        background_color=(0.1, 0.3, 0.6, 1),
     )
     self.btn_extra_start.bind(on_press=self.send_service_ping)
     extra_layout.add_widget(self.btn_extra_start)
@@ -79,7 +135,7 @@ class LkwTrackerLayout(BoxLayout):
     self.btn_logcat = Button(
         text="🔍 Logcat Fehler",
         font_size="16sp",
-        background_color=(0.7, 0.4, 0.1, 1),
+        background_color=(0.6, 0.3, 0.1, 1),
     )
     self.btn_logcat.bind(on_press=self.show_logcat_popup)
     extra_layout.add_widget(self.btn_logcat)
@@ -91,6 +147,7 @@ class LkwTrackerLayout(BoxLayout):
         text="Telegram: Nicht konfiguriert",
         font_size="13sp",
         halign="center",
+        color=(0.8, 1, 0.8, 1),
         size_hint_y=None,
         height=35,
     )
@@ -100,7 +157,6 @@ class LkwTrackerLayout(BoxLayout):
     self.is_active = False
 
   def request_gps_permissions(self, dt):
-    """Fordert beim Start die notwendigen Android-Berechtigungen an"""
     try:
       from android.permissions import Permission, request_permissions
       permissions = [
@@ -120,10 +176,10 @@ class LkwTrackerLayout(BoxLayout):
   def toggle_btn_style(self):
     if self.is_active:
       self.toggle_btn.text = "Tracking stoppen"
-      self.toggle_btn.background_color = (0.8, 0.2, 0.2, 1)
+      self.toggle_btn.background_color = (0.7, 0.1, 0.1, 1)
     else:
       self.toggle_btn.text = "Tracking starten"
-      self.toggle_btn.background_color = (0.2, 0.6, 0.2, 1)
+      self.toggle_btn.background_color = (0.1, 0.5, 0.1, 1)
 
   def toggle_tracking(self, instance):
     self.is_active = not self.is_active
