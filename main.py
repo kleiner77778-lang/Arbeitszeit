@@ -1,31 +1,17 @@
 import json
 import os
 import subprocess
-from jnius import autoclass
 from kivy.app import App
 from kivy.clock import Clock
+from kivy.utils import platform
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 
-# Android-spezifische Module für Berechtigungen und Pfade einbinden
-try:
-  from android.permissions import Permission, request_permissions
-
-  ANDROID_PLATFORM = True
-except ImportError:
-  ANDROID_PLATFORM = False
-
-try:
-  PythonActivity = autoclass("org.kivy.android.PythonActivity")
-  activity = PythonActivity.mActivity
-  context = activity.getApplicationContext()
-  FILES_DIR = context.getFilesDir().getAbsolutePath()
-except Exception:
-  FILES_DIR = "."
-
+# Sichere Pfadermittlung ohne pyjnius Absturz
+FILES_DIR = os.path.expanduser('~')
 STATUS_FILE = os.path.join(FILES_DIR, "status.json")
 COMMAND_FILE = os.path.join(FILES_DIR, "command.json")
 
@@ -38,8 +24,8 @@ class LkwTrackerLayout(BoxLayout):
     self.padding = 25
     self.spacing = 15
 
-    # Beim Start sofort Berechtigungen anfordern (Android)
-    if ANDROID_PLATFORM:
+    # Beim Start Standort-Berechtigungen anfordern
+    if platform == "android":
       Clock.schedule_once(self.request_gps_permissions, 1)
 
     # Titel
@@ -51,7 +37,7 @@ class LkwTrackerLayout(BoxLayout):
             halign="center",
             size_hint_y=None,
             height=60,
-    )
+        )
     )
 
     # Status-Anzeige
@@ -77,7 +63,7 @@ class LkwTrackerLayout(BoxLayout):
     self.toggle_btn.bind(on_press=self.toggle_tracking)
     self.add_widget(self.toggle_btn)
 
-    # Untere Layout-Leiste für Extra-Buttons (Dienst Reset & Logcat)
+    # Untere Layout-Leiste für Extra-Buttons
     extra_layout = BoxLayout(
         orientation="horizontal", size_hint_y=None, height=55, spacing=10
     )
@@ -116,6 +102,7 @@ class LkwTrackerLayout(BoxLayout):
   def request_gps_permissions(self, dt):
     """Fordert beim Start die notwendigen Android-Berechtigungen an"""
     try:
+      from android.permissions import Permission, request_permissions
       permissions = [
           Permission.ACCESS_FINE_LOCATION,
           Permission.ACCESS_COARSE_LOCATION,
@@ -125,11 +112,10 @@ class LkwTrackerLayout(BoxLayout):
       print(f"Fehler bei Berechtigungsanfrage: {e}")
 
   def permission_callback(self, permissions, results):
-    """Wird aufgerufen, wenn der Benutzer die Berechtigungen beantwortet hat"""
     if all(results):
       print("Alle Standort-Berechtigungen erteilt!")
     else:
-      print("Standort-Berechtigungen wurden teilweise abgelehnt.")
+      print("Standort-Berechtigungen teilweise abgelehnt.")
 
   def toggle_btn_style(self):
     if self.is_active:
