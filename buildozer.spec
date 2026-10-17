@@ -29,14 +29,14 @@ android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREG
 # Registrierung des Hintergrund-Dienstes
 services = lkwservice:service/main.py:foreground:sticky:foregroundServiceType=location
 
-# Android 14+ Build-Einstellungen
 android.accept_sdk_license = True
-android.api = 34
+android.api = 33
 android.minapi = 24
 android.ndk_api = 24
 android.ndk = 25b
-android.sdk_build_tools_version = 34.0.0
+android.sdk_build_tools_version = 33.0.2
 android.archs = arm64-v8a
+
 
 p4a.bootstrap = sdl2
 
