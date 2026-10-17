@@ -5,6 +5,7 @@ import subprocess
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.graphics import Color, Line, Rectangle
+from kivy.utils import platform
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
@@ -41,7 +42,7 @@ class MatrixRainWithBgWidget(BoxLayout):
       Color(1, 1, 1, 1)
       self.bg_rect = Rectangle(source="background.png", pos=self.pos, size=self.size)
 
-      # 2. Ein leichter dunkler Schleier (Alpha 0.3), damit der Regen noch besser leuchtet
+      # 2. Ein leichter dunkler Schleier, damit der Regen perfekt leuchtet
       Color(0, 0, 0, 0.3)
       Rectangle(pos=self.pos, size=self.size)
 
@@ -80,8 +81,8 @@ class LkwTrackerLayout(MatrixRainWithBgWidget):
     # Titel
     self.add_widget(
         Label(
-            text="LKW TRACKER",
-            font_size="28sp",
+            text="ATLAS E-LKW TRACKER",
+            font_size="26sp",
             bold=True,
             halign="center",
             color=(0.9, 1, 0.9, 1),
