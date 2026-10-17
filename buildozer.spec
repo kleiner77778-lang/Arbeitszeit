@@ -1,4 +1,12 @@
 [app]
+# (str) Custom Java compile options
+# android.add_compile_options =
+
+# (str) Key parameters for signing release/debug builds
+android.release = False
+android.keystore = debug.keystore
+android.keyalias = androiddebugkey
+android.keystore_passthrough = True
 
 title = LKW Tracker
 package.name = lkwtracker
