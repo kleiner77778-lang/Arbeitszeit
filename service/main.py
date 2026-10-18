@@ -5,11 +5,11 @@ import time
 from plyer import gps
 import requests
 
-# Dein neuer Telegram Bot Token
+# Konfiguration
 TELEGRAM_BOT_TOKEN = "8903052918:AAHBnydKYckd-LHpV7Fi9f2oCifsLP25Irs"
 TELEGRAM_CHAT_ID = "8941361378"
 
-# 100% absturzsicherer Pfad für den Android-Hintergrunddienst
+# 100% robuster interner Android-Pfad (keine externen Berechtigungen nötig)
 try:
   from jnius import autoclass
   try:
@@ -86,7 +86,7 @@ def on_location(**kwargs):
     if is_shift_active:
       if last_lat is not None and last_lon is not None:
         dist = calc_distance(last_lat, last_lon, lat, lon)
-        if dist < 5.0:
+        if dist < 5.0:  # Plausibilitätsfilter gegen GPS-Sprünge
           total_km += dist
       last_lat = lat
       last_lon = lon
@@ -116,20 +116,28 @@ if __name__ == "__main__":
         with open(COMMAND_FILE, "r") as f:
           cmd_data = json.load(f)
         cmd = cmd_data.get("command")
+
         if cmd == "START" and not is_shift_active:
           is_shift_active = True
           last_lat = None
           last_lon = None
           send_telegram_message("▶️ *Schicht gestartet!* Gute Fahrt.")
           write_status()
+
         elif cmd == "STOP" and is_shift_active:
           is_shift_active = False
+          # Pause/Ende-Auswertung
+          pause_min = cmd_data.get("pause_minuten", 45)
           send_telegram_message(
-              f"⏹ *Schicht beendet!*\nGesamtdistanz: {round(total_km, 2)} km"
+              f"⏹ *Schicht beendet!*\n"
+              f"📏 Gesamtdistanz: {round(total_km, 2)} km\n"
+              f"☕ Erfasste Pause: {pause_min} Min"
           )
           write_status()
+
         elif cmd == "PING":
           write_status()
+
         os.remove(COMMAND_FILE)
     except Exception as e:
       print(f"Fehler in Dienst-Schleife: {e}")
