@@ -1,45 +1,62 @@
 [app]
-# (str) Custom Java compile options
-# android.add_compile_options =
 
-# (str) Key parameters for signing release/debug builds
-android.release = False
-android.keystore = debug.keystore
-android.keyalias = androiddebugkey
-android.keystore_passthrough = True
+# (str) Title of your application
+title = ATLAS E-LKW Tracker
 
-title = LKW Tracker
+# (str) Package name
 package.name = lkwtracker
-package.domain = org.lkwtracker
 
+# (str) Package domain (needed for android packaging)
+package.domain = org.atlas
+
+# (list) Source files to include (let empty to include all files)
 source.include_exts = py,png,jpg,kv,atlas,json
-source.dir = .
 
-version = 0.1
+# (list) List of inclusion & exclusion patterns for source files
+source.include_patterns = assets/*,service/*.py
 
-# Hier haben wir urllib3, certifi etc. ergänzt, damit Telegram-Nachrichten fehlerfrei rausgehen
-requirements = python3,kivy,requests,plyer,jnius,urllib3,certifi,idna,charset_normalizer
+# (str) Application versioning
+version = 1.0
 
-# Geändert auf 'all', damit sich die App frei drehen kann
-orientation = all
+# (list) Application requirements
+# Wichtig: python3, kivy, plyer für GPS/Berechtigungen, requests für Telegram, pyjnius für den Dienst-Pfad
+requirements = python3,kivy,plyer,requests,urllib3,certifi,idna,charset_normalizer,pyjnius
 
-# Berechtigungen inkl. Foreground Service für Android 14+
-android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREGROUND_SERVICE,FOREGROUND_SERVICE_LOCATION
+# (list) Supported orientations
+orientation = portrait
 
-# Registrierung des Hintergrund-Dienstes
-services = lkwservice:service/main.py:foreground:sticky:foregroundServiceType=location
+# (list) List of services to declare
+# Hier wird dein Hintergrunddienst sauber angemeldet
+services = tracker:service/main.py:on_boot:true
 
-android.accept_sdk_license = True
-android.api = 33
-android.minapi = 24
-android.ndk_api = 24
-android.ndk = 25b
-android.sdk_build_tools_version = 33.0.2
+[android]
+
+# (str) Supported Android architectures
 android.archs = arm64-v8a
 
+# (list) Permissions
+INTERNET für Telegram, GPS-Berechtigungen für das Tracking
+android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION
 
-p4a.bootstrap = sdl2
+# (int) Target Android API, should be as high as possible.
+android.api = 33
+
+# (int) Minimum API your APK will support.
+android.minapi = 21
+
+# (str) Android NDK version to use
+android.ndk = 25b
+
+# (bool) Enable AndroidX support
+android.androidx = True
 
 [buildozer]
+
+# (int) Log level (0 = error only, 1 = info, 2 = debug (with command output))
 log_level = 2
-warn_on_root = 1
+
+# (str) Path to build artifact storage
+build_dir = .buildozer
+
+# (str) Path to build output (binaries)
+bin_dir = bin
