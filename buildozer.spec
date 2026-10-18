@@ -9,6 +9,9 @@ package.name = lkwtracker
 # (str) Package domain (needed for android packaging)
 package.domain = org.atlas
 
+# (str) Source code where the main.py lives
+source.dir = .
+
 # (list) Source files to include (let empty to include all files)
 source.include_exts = py,png,jpg,kv,atlas,json
 
@@ -19,14 +22,12 @@ source.include_patterns = assets/*,service/*.py
 version = 1.0
 
 # (list) Application requirements
-# Wichtig: python3, kivy, plyer für GPS/Berechtigungen, requests für Telegram, pyjnius für den Dienst-Pfad
 requirements = python3,kivy,plyer,requests,urllib3,certifi,idna,charset_normalizer,pyjnius
 
 # (list) Supported orientations
 orientation = portrait
 
 # (list) List of services to declare
-# Hier wird dein Hintergrunddienst sauber angemeldet
 services = tracker:service/main.py:on_boot:true
 
 [android]
@@ -35,7 +36,6 @@ services = tracker:service/main.py:on_boot:true
 android.archs = arm64-v8a
 
 # (list) Permissions
-INTERNET für Telegram, GPS-Berechtigungen für das Tracking
 android.permissions = INTERNET,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION
 
 # (int) Target Android API, should be as high as possible.
