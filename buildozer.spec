@@ -1,40 +1,65 @@
 [app]
 
 # (str) Title of your application
-title = ATLAS E-LKW TRACKER
+title = LKW Tracker
 
 # (str) Package name
 package.name = lkwtracker
 
-# (str) Package domain (needed for android/ios packaging)
-package.domain = org.atlas
+# (str) Package domain
+package.domain = org.lkwtracker
 
 # (str) Source code where the main.py live
 source.dir = .
 
-# (list) Source files to include (let empty to include all the files)
+# (list) Source files to include
 source.include_exts = py,png,jpg,kv,atlas,json
 
-# (str) Application versioning (method 1)
-version = 1.0
+# (str) Application versioning
+version = 0.1
 
 # (list) Application requirements
-# WICHTIG: python3 zwingt Buildozer auf die stabile Python-Version 3.10
-requirements = python3,kivy,plyer,requests,pyjnius
+requirements = python3,kivy,requests,plyer,jnius,urllib3,certifi,idna,charset_normalizer
 
-# (str) Supported orientation (one of landscape, sensorLandscape, portrait or all)
-orientation = portrait
+# (str) Supported orientation ('all' lets the app rotate freely)
+orientation = all
 
 # (bool) Indicate if the application should be fullscreen or not
 fullscreen = 0
 
-# (list) Permissions
-android.permissions = INTERNET, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, FOREGROUND_SERVICE, WAKE_LOCK
+# (list) Permissions including Foreground Service for Android 14+
+android.permissions = INTERNET, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, FOREGROUND_SERVICE, FOREGROUND_SERVICE_LOCATION
 
-# (list) Services to declare
-services = Serviceman:service/main.py
+# (list) Services to declare (exakter Name 'lkwservice' passend zum Code)
+services = lkwservice:service/main.py:foreground:sticky:foregroundServiceType=location
+
+# (bool) Accept SDK license automatically
+android.accept_sdk_license = True
 
 # (int) Target Android API
 android.api = 33
 
-# (int)
+# (int) Minimum API supported
+android.minapi = 24
+
+# (int) NDK API version
+android.ndk_api = 24
+
+# (str) Android NDK version
+android.ndk = 25b
+
+# (str) SDK build tools version
+android.sdk_build_tools_version = 33.0.2
+
+# (list) Target architectures
+android.archs = arm64-v8a
+
+# (str) Bootstrap to use for p4a
+p4a.bootstrap = sdl2
+
+[buildozer]
+# (int) Log level (1 = info, verhindert das Abschneiden der Logs auf GitHub)
+log_level = 1
+
+# (int) Warn on root user when building inside Docker
+warn_on_root = 1
