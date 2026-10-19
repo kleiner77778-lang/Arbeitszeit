@@ -48,23 +48,28 @@ class AtlasApp(App):
     self.command_file = os.path.join(self.files_dir, "command.json")
 
     # Hauptlayout
-    root = BoxLayout(orientation="vertical", padding=10, spacing=10)
+    root = BoxLayout(orientation="vertical", padding=15, spacing=10)
 
     # Titel
     root.add_widget(
         Label(
             text="ATLAS E-LKW TRACKER",
-            font_size="20sp",
+            font_size="22sp",
+            bold=True,
             size_hint_y=None,
             height=40,
         )
     )
 
-    # Bild / Logo kleiner und rechteckig (proportional angepasst)
+    # Bild / Logo (Fängt Fehler ab, falls logo.png fehlt oder weiß ist)
+    logo_path = "logo.png"
+    if not os.path.exists(logo_path):
+      logo_path = ""  # Verhindert den weißen Kasten, falls das Bild nicht im Ordner liegt
+
     self.img = Image(
-        source="logo.png",
+        source=logo_path,
         size_hint_y=None,
-        height=150,
+        height=120,
         allow_stretch=True,
         keep_ratio=True,
     )
@@ -72,16 +77,20 @@ class AtlasApp(App):
 
     # Status-Anzeige (Textfeld für Live-Daten)
     self.status_label = Label(
-        text="Lade Status...",
+        text="Warte auf Dienst-Status...",
         font_size="16sp",
         halign="center",
         valign="middle",
     )
+    # Text-Wrapping aktivieren, damit Zeilenumbrüche sauber dargestellt werden
+    self.status_label.bind(
+        size=lambda s, w: setattr(s, "text_size", (w, None))
+    )
     root.add_widget(self.status_label)
 
-    # Buttons in einer waagerechten Reihe nebeneinander, kompakter
+    # Buttons in einer waagerechten Reihe nebeneinander, kompakt
     btn_layout = BoxLayout(
-        orientation="horizontal", spacing=10, size_hint_y=None, height=50
+        orientation="horizontal", spacing=10, size_hint_y=None, height=55
     )
 
     self.btn_start = Button(text="START", background_color=(0, 0.7, 0, 1))
@@ -98,28 +107,10 @@ class AtlasApp(App):
 
     root.add_widget(btn_layout)
 
-    # Hintergrunddienst starten (Android)
-    self.start_background_service()
-
     # Regelmäßiger Status-Check alle 1 Sekunde
     Clock.schedule_interval(self.update_status_display, 1.0)
 
     return root
-
-  def start_background_service(self):
-    try:
-      from jnius import autoclass
-
-      Activity = autoclass("org.kivy.android.PythonActivity")
-      context = Activity.mActivity
-      ServiceName = autoclass(
-          "org.kivy.android.PythonService"
-      ).mServiceClass
-      intent = autoclass("android.content.Intent")(context, ServiceName)
-      intent.putExtra("pythonServiceArgument", "service.py")
-      context.startService(intent)
-    except Exception as e:
-      print(f"Service Start Fehler: {e}")
 
   def send_command(self, cmd_data):
     try:
@@ -152,8 +143,13 @@ class AtlasApp(App):
             f"Telegram: {'Verbunden' if data.get('telegram_ok') else 'Getrennt'}"
         )
         self.status_label.text = status_text
-      except Exception:
-        pass
+      except Exception as e:
+        self.status_label.text = f"Fehler beim Lesen von status.json:\n{e}"
+    else:
+      self.status_label.text = (
+          "Warte auf Hintergrunddienst (lkwservice)...\nPrüfe Berechtigungen"
+          " (Standort/Foreground)."
+      )
 
 
 if __name__ == "__main__":
