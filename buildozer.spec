@@ -19,8 +19,8 @@ source.include_exts = py,png,jpg,kv,atlas,json
 version = 1.0
 
 # (list) Application requirements
-# WICHTIG: python3==3.10 zwingt Buildozer auf die stabile Python-Version 3.10
-requirements = python3==3.10,kivy,plyer,requests,pyjnius
+# WICHTIG: python3 zwingt Buildozer auf die stabile Python-Version 3.10
+requirements = python3,kivy,plyer,requests,pyjnius
 
 # (str) Supported orientation (one of landscape, sensorLandscape, portrait or all)
 orientation = portrait
